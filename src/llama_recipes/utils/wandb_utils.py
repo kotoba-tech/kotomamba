@@ -53,16 +53,26 @@ def set_config(wandb_configs: dict) -> None:
     wandb_configs["fsdp_cpu_offload"] = fsdp_config.fsdp_cpu_offload
 
 
-def log_model_info(model: torch.nn.Module) -> None:
+def log_model_info(model: torch.nn.Module, model_name: str) -> None:
     model_config: dict[str, Any] = {}
-    model_config["activation_function"] = model.config.hidden_act
-    model_config["hidden_size"] = model.config.hidden_size
-    model_config["model_type"] = model.config.model_type
-    model_config["max_position_embeddings"] = model.config.max_position_embeddings
-    model_config["num_attention_heads"] = model.config.num_attention_heads
-    model_config["num_hidden_layers"] = model.config.num_hidden_layers
-    model_config["vocab_size"] = model.config.vocab_size
-    model_config["model_architecture"] = model.config.architectures[0]
+
+    if "mamba" in model_name:
+        model_config["d_model"] = model.config.d_model
+        model_config["fused_add_norm"] = model.config.fused_add_norm
+        model_config["n_layers"] = model.config.n_layer
+        model_config["vocab_size"] = model.config.vocab_size
+        model_config["rms_norm"] = model.config.rms_norm
+        model_config["residual_in_fp32"] = model.config.residual_in_fp32
+        model_config["pad_vocab_size_multiple"] = model.config.pad_vocab_size_multiple
+    else:
+        model_config["activation_function"] = model.config.hidden_act
+        model_config["hidden_size"] = model.config.hidden_size
+        model_config["model_type"] = model.config.model_type
+        model_config["max_position_embeddings"] = model.config.max_position_embeddings
+        model_config["num_attention_heads"] = model.config.num_attention_heads
+        model_config["num_hidden_layers"] = model.config.num_hidden_layers
+        model_config["vocab_size"] = model.config.vocab_size
+        model_config["model_architecture"] = model.config.architectures[0]
 
     print(f"model info: {model}")
     print(f"model config: {model.config}")
@@ -172,33 +182,32 @@ def log_wandb(
     if fsdp_config is not None and fsdp_config.fsdp_activation_checkpointing:  # type ignore
         checkpoint_activations_factor = 4
 
-    num_layers: int = model.config.num_hidden_layers
-    hidden_size: int = model.config.hidden_size
+    num_layers: int = model.config.n_layer
+    hidden_size: int = model.config.d_model
     vocab_size: int = model.config.vocab_size
-    activation_func: str = model.config.hidden_act
-    intermediate_size: int = model.config.intermediate_size
+    activation_func: str = "silu"
 
     activation_function_factor: int = 4  # GELU
     if activation_func == "silu":
         activation_function_factor = 4 + 2  # SWiGLU (upscaling + down scaling)
 
     # tflops calculation
-    flops_per_iteration: float = (
-        (8 + activation_function_factor * (intermediate_size / hidden_size))
-        * checkpoint_activations_factor
-        * batch_size
-        * sequence_length
-        * gradient_accumulation_steps
-        * num_layers
-        * (hidden_size**2)
-    ) * (1.0 + (sequence_length / (6.0 * hidden_size)) + (vocab_size / (16.0 * num_layers * hidden_size)))
-    tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
-    wandb_stats["stats/tflops"] = tflops
+    # flops_per_iteration: float = (
+    #     (8 + activation_function_factor * (intermediate_size / hidden_size))
+    #     * checkpoint_activations_factor
+    #     * batch_size
+    #     * sequence_length
+    #     * gradient_accumulation_steps
+    #     * num_layers
+    #     * (hidden_size**2)
+    # ) * (1.0 + (sequence_length / (6.0 * hidden_size)) + (vocab_size / (16.0 * num_layers * hidden_size)))
+    # tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
+    # wandb_stats["stats/tflops"] = tflops
 
     wandb.log(wandb_stats, step=wandb_iteration + 1)
 
     print("------------------------------------------------------------------")
-    print(f"iteration: {wandb_iteration + 1} , tflops: {tflops}, loss: {accumulation_loss}")
+    print(f"iteration: {wandb_iteration + 1} , tflops: , loss: {accumulation_loss}")
     print(
         "------------------------------------------------------------------",
         flush=True,
