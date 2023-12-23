@@ -158,23 +158,23 @@ def main(**kwargs) -> None:
             print_rank_0("NOTE: freeze transformer layers")
             freeze_transformer_layers(model=model, num_layer=train_config.num_freeze_layers)
 
-        # mixed_precision_policy, wrapping_policy = get_policies(
-        #     cfg=fsdp_config,
-        #     rank=get_rank(),
-        #     model_name=train_config.model_name,
-        # )
-        # my_auto_wrapping_policy = fsdp_auto_wrap_policy(
-        #     model=model,
-        #     transformer_layer_name=get_model_decoder_layer(
-        #         model_name=train_config.model_name,
-        #     )
-        # )
+        mixed_precision_policy, wrapping_policy = get_policies(
+            cfg=fsdp_config,
+            rank=get_rank(),
+            model_name=train_config.model_name,
+        )
+        my_auto_wrapping_policy = fsdp_auto_wrap_policy(
+            model=model,
+            transformer_layer_name=get_model_decoder_layer(
+                model_name=train_config.model_name,
+            )
+        )
 
         model = FSDP(
             model,  # type: ignore
-            # auto_wrap_policy=my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
+            auto_wrap_policy=my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
             cpu_offload=CPUOffload(offload_params=True) if fsdp_config.fsdp_cpu_offload else None,
-            mixed_precision=None,
+            mixed_precision=mixed_precision_policy if not fsdp_config.pure_bf16 else None,
             sharding_strategy=fsdp_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
@@ -183,7 +183,7 @@ def main(**kwargs) -> None:
             if train_config.low_cpu_fsdp and rank != 0
             else None,
         )
-        if fsdp_config.fsdp_activation_checkpointing and "mamba" not in train_config.model_name:
+        if fsdp_config.fsdp_activation_checkpointing and train_config.model_name:
             apply_fsdp_checkpointing(model=model, model_name=train_config.model_name)
     elif not train_config.quantization and not train_config.enable_fsdp:
         model.to("cuda")  # type: ignore

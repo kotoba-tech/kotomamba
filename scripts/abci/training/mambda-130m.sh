@@ -100,6 +100,7 @@ mpirun -np $NUM_GPUS \
   --tokenizer_name EleutherAI/gpt-neox-20b \
   --batch_size_training $BATCH_SIZE \
   --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS \
+  --fsdp_activation_checkpointing \
   --lr $LR \
   --lr_min $LR_MIN \
   --lr_warmup $LR_WARMUP \
