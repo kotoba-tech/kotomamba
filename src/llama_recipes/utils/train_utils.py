@@ -97,7 +97,8 @@ def train(
 
     # set model info
     if rank == 0 and train_config.wandb_name:
-        log_model_info(model)
+        # log_model_info(model)
+        pass
 
     last_epoch: int = 0
     last_iteration: int = 0
@@ -177,18 +178,19 @@ def train(
                     avg_loss = avg_loss / world_size
 
                     if rank == 0:
-                        log_wandb(
-                            batch=batch,
-                            model=model,
-                            accumulation_loss=avg_loss,
-                            optimizer=optimizer,
-                            epoch=epoch,
-                            step=step,
-                            gradient_accumulation_steps=gradient_accumulation_steps,
-                            world_size=world_size,
-                            iteration_start_time=iteration_start_time,
-                            wandb_iteration=wandb_iteration,
-                        )
+                        # log_wandb(
+                        #     batch=batch,
+                        #     model=model,
+                        #     accumulation_loss=avg_loss,
+                        #     optimizer=optimizer,
+                        #     epoch=epoch,
+                        #     step=step,
+                        #     gradient_accumulation_steps=gradient_accumulation_steps,
+                        #     world_size=world_size,
+                        #     iteration_start_time=iteration_start_time,
+                        #     wandb_iteration=wandb_iteration,
+                        # )
+                        pass
                     accumulation_loss = 0.0
                     iteration_start_time = time.perf_counter()
 

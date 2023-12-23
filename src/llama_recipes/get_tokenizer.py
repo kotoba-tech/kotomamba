@@ -62,6 +62,14 @@ def get_tokenizer(train_config: Type[train_config]) -> AutoTokenizer | LlamaToke
         )
 
         return tokenizer  # type: ignore
+
+    elif "EleutherAI/gpt-neox-20b" in train_config.tokenizer_name:
+        tokenizer = AutoTokenizer.from_pretrained(
+            train_config.tokenizer_name
+        )
+
+        return tokenizer  # type: ignore
+
     else:
         raise NotImplementedError(
             f"Tokenizer {train_config.tokenizer_name} is not supported. Please use Llama or Mistral."

@@ -299,5 +299,16 @@ def get_model(
 
         return model  # type: ignore
 
+    elif "mamba" in train_config.model_name:
+        from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+
+        model = MambaLMHeadModel.from_pretrained(
+            train_config.model_name,
+            device="cuda",
+            dtype=torch.float16,
+        )
+
+        return model  # type: ignore
+
     else:
         raise NotImplementedError("model not implemented")
