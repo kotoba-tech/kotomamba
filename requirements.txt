@@ -8,3 +8,9 @@ accelerate
 
 # logging
 wandb
+
+# for FSDP
+deepspeed
+peft
+fire
+optimum
