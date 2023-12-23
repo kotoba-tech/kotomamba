@@ -35,6 +35,8 @@
 4. change triton code
 
     ldconfig path is not recognized correctly, change to full path
+
+
     `.venv/lib/python3.10/site-packages/triton/common/build.py:L21`
     ```diff
     @functools.lru_cache()
