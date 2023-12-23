@@ -2,6 +2,7 @@
 outputs
 hostfile
 .hf_cache
+wandb
 
 *__pycache__/
 *.egg-info/
