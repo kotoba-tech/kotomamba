@@ -2,7 +2,7 @@
 #$ -l rt_AF=1
 #$ -l h_rt=5:00:00
 #$ -j y
-#$ -o outputs/mamba-130m/
+#$ -o outputs/mamba-790m/
 #$ -cwd
 
 # module load
@@ -47,7 +47,7 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=8
+BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=128
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
@@ -72,11 +72,11 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR="/groups/gaf51275/llama/datasets/instruct/llm-jp-gpt4-self-instruct"
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-790m
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-130m
+MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-790m
 
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
@@ -120,4 +120,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "mamba-130m"
+  --wandb_name "mamba-790m"

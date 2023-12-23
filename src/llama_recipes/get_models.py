@@ -304,7 +304,6 @@ def get_model(
 
         model = MambaLMHeadModel.from_pretrained(
             train_config.model_name,
-            device="cuda",
             dtype=torch.float16,
         )
 
