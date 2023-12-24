@@ -23,7 +23,6 @@ class train_config:
     lr_warmup: float = 0.002  # ratio of warmup
     lr_decay_style: str = "cosine"
     use_sequence_length_schedule: bool = False
-    sequence_length: int = 4096
     sequence_length_warmup_min: int = 8
     sequence_length_warmup: float = 0.15
     weight_decay: float = 0.1

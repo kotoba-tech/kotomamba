@@ -115,6 +115,7 @@ mpirun -np $NUM_GPUS \
   --save_model \
   --save_optimizer \
   --save_interval_iteration 500 \
+  --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
   --use_mpi \
