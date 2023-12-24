@@ -16,6 +16,7 @@ from llama_recipes.datasets import (
     get_ja_en_parallel_dataset,
     get_stability_instruct_dataset,
     get_pubmed_dataset,
+    get_pile_dataset,
 )
 
 from llama_recipes.configs.datasets import ja_wikipedia_dataset, llm_jp_dataset
@@ -182,6 +183,7 @@ DATASET_PREPROC = {
     "ja_en_parallel_dataset": partial(get_ja_en_parallel_dataset),
     "stability_instruct_dataset": partial(get_stability_instruct_dataset),
     "pubmed_dataset": partial(get_pubmed_dataset),
+    "pile_dataset": partial(get_pile_dataset),
 }
 
 

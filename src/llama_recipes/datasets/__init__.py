@@ -8,3 +8,4 @@ from llama_recipes.datasets.samsum_dataset import get_preprocessed_samsum as get
 from llama_recipes.datasets.jpara_dataset import JapaneseEnglishParallelDataset as get_ja_en_parallel_dataset
 from llama_recipes.datasets.stability_instruct_dataset import StabilityInstructDataset as get_stability_instruct_dataset
 from llama_recipes.datasets.pubmed_dataset import PUBMEDDataset as get_pubmed_dataset
+from llama_recipes.datasets.pile_dataset import PILEDataset as get_pile_dataset
