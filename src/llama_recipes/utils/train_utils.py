@@ -362,6 +362,10 @@ def evaluation(
             preds = torch.argmax(outputs.logits, -1)
             eval_preds.extend(tokenizer.batch_decode(preds.detach().cpu().numpy(), skip_special_tokens=True))
 
+            # Stop evaluation after a certain number of steps
+            if step + 1 >= train_config.val_iteration:
+                break
+
     # If there's more than one CUDA device, reduce evaluation loss across all devices
     if torch.cuda.device_count() > 1 and train_config.enable_fsdp and not wandb_log:
         torch_distributed.all_reduce(eval_loss, op=torch_distributed.ReduceOp.SUM)
