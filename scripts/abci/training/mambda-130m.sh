@@ -44,11 +44,11 @@ while read -r line; do
 done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 
 # training settings
-NUM_EPOCHS=1
+NUM_EPOCHS=5
 
 # batch size
-BATCH_SIZE=8
-GLOBAL_BATCH_SIZE=128
+BATCH_SIZE=4
+GLOBAL_BATCH_SIZE=256
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -57,8 +57,8 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=1e-5
-LR_MIN=1e-6
+LR=1.5e-3
+LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
 LR_DECAY_STYLE="cosine"
@@ -116,6 +116,7 @@ mpirun -np $NUM_GPUS \
   --save_model \
   --save_optimizer \
   --save_interval_iteration 500 \
+  --sequence_length 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
   --use_mpi \

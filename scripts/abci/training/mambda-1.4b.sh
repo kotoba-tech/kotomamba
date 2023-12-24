@@ -57,8 +57,8 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=1e-5
-LR_MIN=1e-6
+LR=1e-3
+LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
 LR_DECAY_STYLE="cosine"

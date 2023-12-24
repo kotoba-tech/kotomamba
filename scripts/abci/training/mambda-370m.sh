@@ -2,7 +2,7 @@
 #$ -l rt_AF=1
 #$ -l h_rt=5:00:00
 #$ -j y
-#$ -o outputs/mamba-790m/
+#$ -o outputs/mamba-370m/
 #$ -cwd
 
 # module load
@@ -44,11 +44,11 @@ while read -r line; do
 done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 
 # training settings
-NUM_EPOCHS=1
+NUM_EPOCHS=5
 
 # batch size
-BATCH_SIZE=2
-GLOBAL_BATCH_SIZE=128
+BATCH_SIZE=8
+GLOBAL_BATCH_SIZE=256
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -57,7 +57,7 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=1.25e-3
+LR=3e-3
 LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
@@ -72,11 +72,11 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR="/groups/gaf51275/llama/datasets/instruct/llm-jp-gpt4-self-instruct"
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-790m
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-370m
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-790m
+MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-370m
 
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
@@ -100,6 +100,7 @@ mpirun -np $NUM_GPUS \
   --tokenizer_name EleutherAI/gpt-neox-20b \
   --batch_size_training $BATCH_SIZE \
   --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS \
+  --fsdp_activation_checkpointing \
   --lr $LR \
   --lr_min $LR_MIN \
   --lr_warmup $LR_WARMUP \
@@ -115,9 +116,10 @@ mpirun -np $NUM_GPUS \
   --save_model \
   --save_optimizer \
   --save_interval_iteration 500 \
+  --sequence_length 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "mamba-790m"
+  --wandb_name "mamba-370m"
