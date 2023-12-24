@@ -217,7 +217,7 @@ def main(**kwargs) -> None:
     estimated_total_iterations: int = (
         train_config.num_epochs
         * len(dataset_train)  # type: ignore
-        // (train_config.batch_size_training * get_world_size() * train_config.gradient_accumulation_steps)
+        // (train_config.batch_size * get_world_size() * train_config.gradient_accumulation_steps)
     )
     lr_warmup_iterations: int = int(estimated_total_iterations * train_config.lr_warmup)
     lr_decay_iterations: int = int(estimated_total_iterations * train_config.lr_decay)
@@ -256,7 +256,7 @@ def main(**kwargs) -> None:
 
     train_dataloader: DataLoader = DataLoader(
         dataset=dataset_train,
-        batch_size=train_config.batch_size_training,
+        batch_size=train_config.batch_size,
         num_workers=train_config.num_workers_dataloader,
         pin_memory=True,
         sampler=train_sampler if train_sampler else None,
@@ -269,7 +269,7 @@ def main(**kwargs) -> None:
     if train_config.run_validation:
         eval_dataloader = DataLoader(
             dataset_val,  # type: ignore
-            batch_size=train_config.val_batch_size,
+            batch_size=train_config.batch_size,
             num_workers=train_config.num_workers_dataloader,
             pin_memory=True,
             sampler=val_sampler if val_sampler else None,

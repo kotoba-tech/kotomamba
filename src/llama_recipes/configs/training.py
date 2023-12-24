@@ -12,7 +12,7 @@ class train_config:
     enable_fsdp: bool = False
     low_cpu_fsdp: bool = False
     run_validation: bool = False
-    batch_size_training: int = 4
+    batch_size: int = 4
     gradient_accumulation_steps: int = 1
     clip_grad_norm: float = 1.0
     num_epochs: int = 1
@@ -33,11 +33,10 @@ class train_config:
     seed: int = 42
     use_fp16: bool = False
     mixed_precision: bool = True
-    val_batch_size: int = 1
-    dataset: str = "ja_wikipedia_dataset"
-    peft_method: str = "lora"  # None , llama_adapter, prefix
+    dataset: str = ""
+    peft_method: str = "None"  # None , llama_adapter, prefix
     use_peft: bool = False
-    output_dir: str = "PATH/to/save/PEFT/model"
+    output_dir: str = ""
     freeze_layers: bool = False
     num_freeze_layers: int = 1
     quantization: bool = False
@@ -52,3 +51,4 @@ class train_config:
     wandb_name: Optional[str] = None
     wandb_entity: Optional[str] = None
     wandb_project: Optional[str] = None
+    val_iteration: int = 100

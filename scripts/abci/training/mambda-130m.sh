@@ -98,7 +98,7 @@ mpirun -np $NUM_GPUS \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name EleutherAI/gpt-neox-20b \
-  --batch_size_training $BATCH_SIZE \
+  --batch_size $BATCH_SIZE \
   --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS \
   --fsdp_activation_checkpointing \
   --lr $LR \
