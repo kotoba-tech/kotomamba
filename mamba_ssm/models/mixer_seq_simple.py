@@ -190,28 +190,37 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
         self,
         config,
         initializer_cfg=None,
-        pad_vocab_size_multiple: int = 1,
         device=None,
         dtype=None,
         **backbone_kwargs,
     ) -> None:
         d_model = config.d_model
         n_layer = config.n_layer
-        vocab_size: int = config.vocab_size
+        self.vocab_size: int = config.vocab_size
+        ssm_cfg = config.ssm_cfg
+        rms_norm = config.rms_norm
+        residual_in_fp32 = config.residual_in_fp32
+        fused_add_norm = config.fused_add_norm
+        pad_vocab_size_multiple = config.pad_vocab_size_multiple
+
         factory_kwargs = {"device": device, "dtype": dtype}
 
         super().__init__(config=config)
-        if vocab_size % pad_vocab_size_multiple != 0:
-            vocab_size += pad_vocab_size_multiple - (vocab_size % pad_vocab_size_multiple)
+        if self.vocab_size % pad_vocab_size_multiple != 0:
+            self.vocab_size += pad_vocab_size_multiple - (self.vocab_size % pad_vocab_size_multiple)
         self.backbone = MixerModel(
             d_model=d_model,
             n_layer=n_layer,
-            vocab_size=vocab_size,
+            vocab_size=self.vocab_size,
+            ssm_cfg=ssm_cfg,
+            rms_norm=rms_norm,
             initializer_cfg=initializer_cfg,
+            fused_add_norm=fused_add_norm,
+            residual_in_fp32=residual_in_fp32,
             **backbone_kwargs,  # type: ignore
             **factory_kwargs,
         )
-        self.lm_head = nn.Linear(d_model, vocab_size, bias=False, **factory_kwargs)
+        self.lm_head = nn.Linear(d_model, self.vocab_size, bias=False, **factory_kwargs)
 
         # Initialize weights and apply final processing
         self.apply(
@@ -255,14 +264,11 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
             shift_labels = labels[..., 1:].contiguous()
             # Flatten the tokens
             loss_fct = CrossEntropyLoss()
-            shift_logits = shift_logits.view(-1, self.config.vocab_size)
+            shift_logits = shift_logits.view(-1, self.vocab_size)
             shift_labels = shift_labels.view(-1)
             # Enable model parallelism
             shift_labels = shift_labels.to(shift_logits.device)
             loss = loss_fct(shift_logits, shift_labels)
-
-            # DEBUG
-            # print(f"DEBUG: loss={loss}, shift_logits={shift_logits}, shift_logits_dtype={shift_logits.dtype}, labels={shift_labels}, labels_dtype={shift_labels.dtype}")
 
             return CausalLMOutput(
                 loss=loss,
@@ -287,13 +293,13 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
 
         model = cls(config=config, device=device, dtype=dtype, **kwargs)
 
-        # model.load_state_dict(
-        #     load_state_dict_hf(
-        #         pretrained_model_name,
-        #         device=device,
-        #         dtype=dtype,
-        #     )
-        # )
+        model.load_state_dict(
+            load_state_dict_hf(
+                pretrained_model_name,
+                device=device,
+                dtype=dtype,
+            )
+        )
 
         return model
 

@@ -12,7 +12,7 @@ def set_config(wandb_configs: dict) -> None:
     wandb_configs["enable_fsdp"] = train_config.enable_fsdp
     wandb_configs["low_cpu_fsdp"] = train_config.low_cpu_fsdp
     wandb_configs["run_validation"] = train_config.run_validation
-    wandb_configs["batch_size_training"] = train_config.batch_size_training
+    wandb_configs["batch_size"] = train_config.batch_size
     wandb_configs["gradient_accumulation_steps"] = train_config.gradient_accumulation_steps
     wandb_configs["num_epochs"] = train_config.num_epochs
     wandb_configs["num_workers_dataloader"] = train_config.num_workers_dataloader
@@ -29,7 +29,6 @@ def set_config(wandb_configs: dict) -> None:
     wandb_configs["seed"] = train_config.seed
     wandb_configs["use_fp16"] = train_config.use_fp16
     wandb_configs["mixed_precision"] = train_config.mixed_precision
-    wandb_configs["val_batch_size"] = train_config.val_batch_size
     wandb_configs["dataset"] = train_config.dataset
     wandb_configs["peft_method"] = train_config.peft_method
     wandb_configs["use_peft"] = train_config.use_peft
