@@ -59,7 +59,7 @@ def log_model_info(model: torch.nn.Module, model_name: str) -> None:
         model_config["d_model"] = model.config.d_model
         model_config["fused_add_norm"] = model.config.fused_add_norm
         model_config["n_layers"] = model.config.n_layer
-        model_config["vocab_size"] = model.config.vocab_size
+        model_config["vocab_size"] = model.vocab_size
         model_config["rms_norm"] = model.config.rms_norm
         model_config["residual_in_fp32"] = model.config.residual_in_fp32
         model_config["pad_vocab_size_multiple"] = model.config.pad_vocab_size_multiple
