@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=5:00:00
+#$ -l h_rt=10:00:00
 #$ -j y
 #$ -o outputs/mamba-2.8b/
 #$ -cwd
@@ -47,7 +47,7 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=1
+BATCH_SIZE=4
 GLOBAL_BATCH_SIZE=512
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
@@ -69,10 +69,10 @@ SEED=42
 
 # dataset
 NUM_WORKERS_DATALOADER=2
-DATASET_DIR="/groups/gaf51275/llama/datasets/instruct/llm-jp-gpt4-self-instruct"
+DATASET_DIR="/groups/gcd50698/fujii/datasets/pile/merged"
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-2.8b
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-2.8b-pile
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -107,10 +107,10 @@ mpirun -np $NUM_GPUS \
   --lr_decay_style $LR_DECAY_STYLE \
   --weight_decay $WEIGHT_DECAY \
   --seed $SEED \
-  --dataset "stability_instruct_dataset" \
-  --train_data_path $DATASET_DIR/train_data.jsonl \
+  --dataset "pile_dataset" \
+  --train_data_path $DATASET_DIR/merged.jsonl \
   --run_validation \
-  --val_data_path $DATASET_DIR/val_data.jsonl \
+  --val_data_path $DATASET_DIR/merged_valid.jsonl \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
