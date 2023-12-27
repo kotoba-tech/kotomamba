@@ -286,12 +286,16 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
         pretrained_model_name,
         device=None,
         dtype=None,
+        from_scratch=False,
         **kwargs
     ):
         config = load_config_hf(pretrained_model_name)
         config = PretrainedConfig(**config)
 
         model = cls(config=config, device=device, dtype=dtype, **kwargs)
+
+        if from_scratch:
+            return model
 
         model.load_state_dict(
             load_state_dict_hf(

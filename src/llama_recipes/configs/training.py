@@ -51,3 +51,4 @@ class train_config:
     wandb_entity: Optional[str] = None
     wandb_project: Optional[str] = None
     val_iteration: int = 100
+    from_scratch: bool = False  # only for mamba
