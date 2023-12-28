@@ -305,6 +305,7 @@ def get_model(
         model = MambaLMHeadModel.from_pretrained(
             train_config.model_name,
             dtype=torch.float16,
+            from_scratch=train_config.from_scratch,
         )
 
         return model  # type: ignore

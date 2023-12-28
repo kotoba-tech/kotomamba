@@ -40,6 +40,8 @@ def set_config(wandb_configs: dict) -> None:
     wandb_configs["save_optimizer"] = train_config.save_optimizer
     wandb_configs["use_fast_kernels"] = train_config.use_fast_kernels
     wandb_configs["use_mpi"] = train_config.use_mpi
+    wandb_configs["val_iteration"] = train_config.val_iteration
+    wandb_configs["from_scratch"] = train_config.from_scratch
 
     # fsdp_config
     wandb_configs["mixed_precision"] = fsdp_config.mixed_precision
