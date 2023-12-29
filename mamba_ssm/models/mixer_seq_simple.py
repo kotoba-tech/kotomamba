@@ -8,11 +8,18 @@ import os
 
 from collections import namedtuple
 
+from typing import Union
 import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss
 from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutput
+from transformers.utils import is_safetensors_available
+
+if is_safetensors_available():
+    from safetensors import safe_open
+    from safetensors.torch import load_file as safe_load_file
+    from safetensors.torch import save_file as safe_save_file
 
 from mamba_ssm.models.config_mamba import MambaConfig
 from mamba_ssm.modules.mamba_simple import Mamba, Block
@@ -184,7 +191,8 @@ class MixerModel(nn.Module):
         return hidden_states
 
 
-class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
+class MambaLMHeadModel(GenerationMixin, PreTrainedModel):
+    _tied_weights_keys = ["lm_head.weight"]
 
     def __init__(
         self,
@@ -307,7 +315,12 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
 
         return model
 
-    def save_pretrained(self, save_directory):
+    def save_pretrained(
+        self,
+        save_directory: str,
+        max_shard_size: Union[int, str] = "5GB",
+        safe_serialization: bool = True,
+    ) -> None:
         """
         Minimal implementation of save_pretrained for MambaLMHeadModel.
         Save the model and its configuration file to a directory.
@@ -316,11 +329,15 @@ class MambaLMHeadModel(PreTrainedModel, GenerationMixin):
         if not os.path.exists(save_directory):
             os.makedirs(save_directory)
 
-        # Save the model's state_dict
-        model_path = os.path.join(save_directory, 'pytorch_model.bin')
-        torch.save(self.state_dict(), model_path)
+        if safe_serialization and not is_safetensors_available():
+            raise ImportError("`safe_serialization` requires the `safetensors library: `pip install safetensors`.")
 
-        # Save the configuration of the model
-        config_path = os.path.join(save_directory, 'config.json')
-        with open(config_path, 'w') as f:
-            json.dump(self.config.__dict__, f)
+        # Save the configuration with indentation
+        config_file = os.path.join(save_directory, 'config.json')
+        with open(config_file, 'w', encoding='utf-8') as f:
+            content = self.config.to_dict()
+            f.write(json.dumps(content, ensure_ascii=False, indent=4) + "\n")
+
+        # Save the model weights
+        model_file = os.path.join(save_directory, 'pytorch_model.bin')
+        torch.save(self.state_dict(), model_file)
