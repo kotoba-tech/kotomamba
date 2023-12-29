@@ -20,12 +20,6 @@ export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
 
 # mambda
 python benchmarks/benchmark_generation_mamba_simple.py \
-  --model-name "state-spaces/mamba-2.8b" \
-  --prompt "My cat wrote all this CUDA code for a new language model and" \
-  --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
-
-# pythia 2.8b
-python benchmarks/benchmark_generation_mamba_simple.py \
-  --model-name "EleutherAI/pythia-2.8b" \
+  --model-name "/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-hf" \
   --prompt "My cat wrote all this CUDA code for a new language model and" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
