@@ -5,7 +5,10 @@ import argparse
 import math
 import json
 import os
+from re import T
 import sys
+
+from sympy import N
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
                                              os.path.pardir)))
 import time
@@ -94,6 +97,8 @@ class Encoder(object):
         data = json.loads(json_line)
         ids = {}
         lens = {}
+        num_tokens = 0
+
         for key in self.args.json_keys:
             text = data[key]
             if isinstance(text, list):
@@ -104,15 +109,16 @@ class Encoder(object):
             sentence_lens = []
             for sentence in sentences:
                 sentence_ids = Encoder.tokenizer.tokenize(sentence)
-                if len(sentence_ids) > 0:
-                    doc_ids.extend(sentence_ids)
-                    sentence_lens.append(len(sentence_ids))
+                if len(sentence_ids) > 0:  # type: ignore
+                    doc_ids.extend(sentence_ids)  # type: ignore
+                    sentence_lens.append(len(sentence_ids))  # type: ignore
+                    num_tokens += len(sentence_ids)  # type: ignore
             if len(doc_ids) > 0 and self.args.append_eod:
                 doc_ids.append(Encoder.tokenizer.eod)
                 sentence_lens[-1] += 1
             ids[key] = doc_ids
             lens[key] = sentence_lens
-        return ids, lens, len(json_line)
+        return ids, lens, len(json_line), num_tokens
 
 
 class Partition(object):
@@ -120,16 +126,17 @@ class Partition(object):
         self.args = args
         self.workers = workers
 
-    def print_processing_stats(self, count, proc_start, total_bytes_processed):
+    def print_processing_stats(self, count, proc_start, total_bytes_processed, total_tokens_processed):
         if count % self.args.log_interval == 0:
             current = time.time()
             elapsed = current - proc_start
             mbs = total_bytes_processed / elapsed / 1024 / 1024
             print(f"Processed {count} documents",
+                  f"total tokens processed {total_tokens_processed}",
                   f"({count/elapsed} docs/s, {mbs} MB/s).",
                   file=sys.stderr)
 
-    def split_sentences(self, file_name):
+    def split_sentences(self, file_name) -> None:
         input_file_name, output_file_name = file_name
         print("Opening", input_file_name)
         fin = open(input_file_name, 'r', encoding='utf-8')
@@ -141,10 +148,13 @@ class Partition(object):
 
         proc_start = time.time()
         total_bytes_processed = 0
+        total_tokens_processed = 0
+
         for i, (doc, bytes_processed) in enumerate(split_docs, start=1):
             total_bytes_processed += bytes_processed
+
             fout.write(doc + "\n")
-            self.print_processing_stats(i, proc_start, total_bytes_processed)
+            self.print_processing_stats(i, proc_start, total_bytes_processed, total_tokens_processed)
 
         fin.close()
         fout.close()
@@ -181,15 +191,20 @@ class Partition(object):
         startup_end = time.time()
         proc_start = time.time()
         total_bytes_processed = 0
+        total_tokens_processed = 0
+
         print("Time to startup:", startup_end - startup_start)
-        for i, (doc, sentence_lens, bytes_processed) in enumerate(encoded_docs, start=1):
+        for i, (doc, sentence_lens, bytes_processed, tokens_processed) in enumerate(encoded_docs, start=1):
             total_bytes_processed += bytes_processed
+            total_tokens_processed += tokens_processed
+
             for key in doc.keys():
                 builders[key].add_document(doc[key], sentence_lens[key])
-            self.print_processing_stats(i, proc_start, total_bytes_processed)
+            self.print_processing_stats(i, proc_start, total_bytes_processed, total_tokens_processed)
 
         fin.close()
         builders[key].finalize(output_idx_files[key])  # type: ignore
+        print(f"Processed Total {total_tokens_processed} tokens", file=sys.stderr)
 
 
 def get_args():
@@ -322,7 +337,9 @@ def main():
                 partitioned_input_files.append(partitioned_input_file)
 
             index = 0
-            if args.keep_sequential_samples: line_count = 0
+            if args.keep_sequential_samples:
+                line_count = 0
+
             for in_file_name in in_file_names:
                 # support for gzip files
                 if in_file_name.endswith(".gz"):

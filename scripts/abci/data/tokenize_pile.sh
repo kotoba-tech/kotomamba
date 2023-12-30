@@ -17,5 +17,5 @@ python tools/preprocess_data.py \
   --input $DATASET_PATH \
   --output-prefix $OUTPUT_DIR/pile-mamba-train \
   --tokenizer-type MambaTokenizer \
-  --workers 32 \
+  --workers 64 \
   --append-eod
