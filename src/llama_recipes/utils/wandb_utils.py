@@ -4,6 +4,7 @@ import wandb
 import os
 import time
 from typing import Any
+import math
 
 
 def set_config(wandb_configs: dict) -> None:
@@ -100,7 +101,7 @@ def log_wandb(
 
     # training info
     wandb_stats["training/loss"] = accumulation_loss
-    wandb_stats["training/perplexity"] = torch.exp(torch.tensor(accumulation_loss)).item()
+    wandb_stats["training/perplexity"] = math.exp(accumulation_loss)
 
     # utils info
     batch_size: int = batch["input_ids"].shape[0]
@@ -186,6 +187,7 @@ def log_wandb(
     num_layers: int = model.config.n_layer
     hidden_size: int = model.config.d_model
     vocab_size: int = model.config.vocab_size
+    intermediate_size = hidden_size * 3
     activation_func: str = "silu"
 
     activation_function_factor: int = 4  # GELU
@@ -193,17 +195,18 @@ def log_wandb(
         activation_function_factor = 4 + 2  # SWiGLU (upscaling + down scaling)
 
     # tflops calculation
-    # flops_per_iteration: float = (
-    #     (8 + activation_function_factor * (intermediate_size / hidden_size))
-    #     * checkpoint_activations_factor
-    #     * batch_size
-    #     * sequence_length
-    #     * gradient_accumulation_steps
-    #     * num_layers
-    #     * (hidden_size**2)
-    # ) * (1.0 + (sequence_length / (6.0 * hidden_size)) + (vocab_size / (16.0 * num_layers * hidden_size)))
-    # tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
-    # wandb_stats["stats/tflops"] = tflops
+    # TODO: fix TFLOPS calculation
+    flops_per_iteration: float = (
+        (8 + activation_function_factor * (intermediate_size / hidden_size))
+        * checkpoint_activations_factor
+        * batch_size
+        * sequence_length
+        * gradient_accumulation_steps
+        * num_layers
+        * (hidden_size**2)
+    ) * (1.0 + (sequence_length / (6.0 * hidden_size)) + (vocab_size / (16.0 * num_layers * hidden_size)))
+    tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
+    wandb_stats["stats/tflops"] = tflops
 
     wandb.log(wandb_stats, step=wandb_iteration + 1)
 
