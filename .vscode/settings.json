@@ -5,11 +5,13 @@
     "Eleuther",
     "endoftext",
     "frombuffer",
+    "itemsize",
     "memmap",
     "MMIDIDX",
     "multimodal",
     "nbytes",
     "neox",
-    "safetensors"
+    "safetensors",
+    "tflops"
   ]
 }

@@ -109,6 +109,11 @@ def train(
         last_epoch = last_iteration // total_length
 
     wandb_iteration: int = 0
+    if last_epoch == train_config.num_epochs:
+        if torch_distributed.get_rank() == 0:
+            print("Training is already completed")
+        return results
+
     for epoch in range(last_epoch, train_config.num_epochs):
         epoch_start_time = time.perf_counter()
         iteration_start_time = time.perf_counter()

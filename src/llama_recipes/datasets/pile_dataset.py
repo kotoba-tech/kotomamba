@@ -160,7 +160,8 @@ class _IndexReader(object):
         assert self.sequence_lengths.shape[0] == len(self)
         assert self.sequence_lengths.shape[0] == self.sequence_count
         assert self.sequence_lengths.shape[0] == self.document_indices[-1]
-        print(f"> total number of documents: {self.document_indices.shape[0] - 1}")
+        if torch.distributed.get_rank() == 0:
+            print(f"> total number of documents: {self.document_indices.shape[0] - 1}")
 
     def __del__(self) -> None:
         """Clean up the object
@@ -205,7 +206,6 @@ class PILEDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         partition: str = "train",
     ) -> None:
-        # keys: alignment_score, instruction, input, output, lang_pair
         self.data_file_path: str = (
             dataset_config.train_data_path if partition == "train" else dataset_config.val_data_path
         )
@@ -231,17 +231,17 @@ class PILEDataset(Dataset):
         self.bin_buffer_mmap = np.memmap((self.data_file_path), mode="r", order="C")
         self.bin_buffer = memoryview(self.bin_buffer_mmap)  # type: ignore
 
-        # split the dataset into the chunck of self.max_words
+        # split the dataset into the chuck of self.max_words
         if self.partition == "train":
             self.batches: List[Tuple] = []  # List of (sequence_pointer, sequence_length, sequence_mode)
 
             # Assuming the calculation of total_bytes is correct as per your data structure
-            total_bytes = self.index[-1][0] + self.index[-1][1] * DType.size(self.index.dtype)  # type: ignore
-            current_pointer = self.index[0][0]  # type: ignore
+            total_bytes: int = self.index[-1][0] + self.index[-1][1] * DType.size(self.index.dtype)  # type: ignore
+            current_pointer: int = self.index[0][0]  # type: ignore
 
             while current_pointer < total_bytes:
                 increment = self.max_words * DType.size(self.index.dtype)
-                next_pointer = current_pointer + increment
+                next_pointer: int = current_pointer + increment
 
                 # Calculate the number of words for this batch
                 num_words = min(self.max_words, (total_bytes - current_pointer) // DType.size(self.index.dtype))
@@ -253,7 +253,6 @@ class PILEDataset(Dataset):
                 current_pointer = next_pointer
 
     def __len__(self) -> int:
-        # TODO
         """Return the length of the dataset i.e. the number of sequences in the index
 
         Returns:
