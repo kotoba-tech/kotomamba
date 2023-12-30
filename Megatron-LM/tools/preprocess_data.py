@@ -25,7 +25,7 @@ from megatron.core.datasets import indexed_dataset
 
 
 # https://stackoverflow.com/questions/33139531/preserve-empty-lines-with-nltks-punkt-tokenizer
-class CustomLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
+class CustomLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):  # type: ignore
 
     _period_context_fmt = r"""
         \S*                          # some word material
@@ -36,6 +36,7 @@ class CustomLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
             |
             (?P<next_tok>\S+)     #  <-- Normally you would have \s+ here
         ))"""
+
 
 class IdentitySplitter(object):
     def tokenize(self, *text):
@@ -54,7 +55,12 @@ class Encoder(object):
                 print("NLTK is not available to split sentences.")
                 exit()
             if os.environ.get("NLTK_DATA"):
-                library = os.path.join(os.environ.get("NLTK_DATA"), "tokenizers", "punkt", f"{self.args.lang}.pickle")
+                library = os.path.join(  # type: ignore
+                    os.environ.get("NLTK_DATA"),  # type: ignore
+                    "tokenizers",
+                    "punkt",
+                    f"{self.args.lang}.pickle"
+                )
                 url = f"file:{library}"
             else:
                 library = os.path.join("tokenizers", "punkt", f"{self.args.lang}.pickle")
@@ -62,9 +68,10 @@ class Encoder(object):
             splitter = nltk.load(url)
             if self.args.keep_newlines:
                 # this prevents punkt from eating newlines after sentences
-                Encoder.splitter = nltk.tokenize.punkt.PunktSentenceTokenizer(
-                    train_text = splitter._params,
-                    lang_vars = CustomLanguageVars())
+                Encoder.splitter = nltk.tokenize.punkt.PunktSentenceTokenizer(  # type: ignore
+                    train_text=splitter._params,  # type: ignore
+                    lang_vars=CustomLanguageVars()
+                )
             else:
                 Encoder.splitter = splitter
 
@@ -77,7 +84,9 @@ class Encoder(object):
         for key in self.args.json_keys:
             text = data[key]
             max_len = 1000000
-            tokens_list = [Encoder.splitter.tokenize(text[i:i+max_len]) for i in range(0, len(text), max_len)]
+            tokens_list = [
+                Encoder.splitter.tokenize(text[i: i + max_len]) for i in range(0, len(text), max_len)  # type: ignore
+            ]
             output[key] = [tokens for partial in tokens_list for tokens in partial]
         return json.dumps(output), len(json_line)
 
@@ -115,7 +124,7 @@ class Partition(object):
         if count % self.args.log_interval == 0:
             current = time.time()
             elapsed = current - proc_start
-            mbs = total_bytes_processed/elapsed/1024/1024
+            mbs = total_bytes_processed / elapsed / 1024 / 1024
             print(f"Processed {count} documents",
                   f"({count/elapsed} docs/s, {mbs} MB/s).",
                   file=sys.stderr)
@@ -139,7 +148,6 @@ class Partition(object):
 
         fin.close()
         fout.close()
-
 
     def process_json_file(self, file_name):
         input_file_name, output_prefix = file_name
@@ -181,7 +189,7 @@ class Partition(object):
             self.print_processing_stats(i, proc_start, total_bytes_processed)
 
         fin.close()
-        builders[key].finalize(output_idx_files[key])
+        builders[key].finalize(output_idx_files[key])  # type: ignore
 
 
 def get_args():
@@ -198,8 +206,7 @@ def get_args():
 
     group = parser.add_argument_group(title='tokenizer')
     group.add_argument('--tokenizer-type', type=str, required=True,
-                       choices=['BertWordPieceLowerCase','BertWordPieceCase',
-                                'GPT2BPETokenizer', 'MambaTokenizer', 'SentencePieceTokenizer',
+                       choices=['MambaTokenizer', 'SentencePieceTokenizer',
                                 'GPTSentencePieceTokenizer', 'Llama2Tokenizer',
                                 'NullTokenizer'],
                        help='What type of tokenizer to use.')
@@ -224,8 +231,7 @@ def get_args():
                        help=('Number of worker processes to launch.'
                              'A good default for fast pre-processing '
                              'is: (workers * partitions) = available CPU cores.'))
-    group.add_argument('--partitions', type=int, default=1,
-                        help='Number of file partitions')
+    group.add_argument('--partitions', type=int, default=1, help='Number of file partitions')
     group.add_argument('--log-interval', type=int, default=1000,
                        help='Interval between progress updates')
     group.add_argument('--keep-sequential-samples', action='store_true',
@@ -270,7 +276,7 @@ def main():
 
     if args.split_sentences:
         if nltk_available:
-            nltk.download("punkt", quiet=True, download_dir=os.environ.get("NLTK_DATA"))
+            nltk.download("punkt", quiet=True, download_dir=os.environ.get("NLTK_DATA"))  # type: ignore
         else:
             raise Exception(
                 "nltk library required for sentence splitting is not available.")
@@ -294,18 +300,18 @@ def main():
                 with open(filename, "r") as fin:
                     for fc, _ in enumerate(fin):
                         pass
-                total_sample_count += (fc + 1)
+                total_sample_count += (fc + 1)  # type: ignore
             partition_size = math.ceil(total_sample_count / args.partitions)
 
-        # create .jsonl parition files
+        # create .jsonl partition files
         for idx in range(args.partitions):
             in_ss_out_name = get_file_name(args, idx)
             in_ss_out_names.append(in_ss_out_name)
 
-        # check to see if paritions were already created
+        # check to see if partitions were already created
         partitions_present = check_files_exist(in_ss_out_names, 'partition', args.partitions)
 
-        # check to see if paritions with split sentences already created
+        # check to see if partitions with split sentences already created
         split_sentences_present = check_files_exist(in_ss_out_names, 'sentence_split', args.partitions)
 
         if not partitions_present and not split_sentences_present:
@@ -327,11 +333,11 @@ def main():
                 for line in fin:
                     partitioned_input_files[index].write(line)
                     if args.keep_sequential_samples:
-                        line_count += 1
-                        if line_count % partition_size == 0:
+                        line_count += 1  # type: ignore
+                        if line_count % partition_size == 0:  # type: ignore
                             index += 1
                     else:
-                        index = (index + 1)%args.partitions
+                        index = (index + 1) % args.partitions
 
                 fin.close()
 
@@ -339,7 +345,7 @@ def main():
                 partitioned_input_files[idx].close()
 
     assert args.workers % args.partitions == 0
-    partition = Partition(args, args.workers//args.partitions)
+    partition = Partition(args, args.workers // args.partitions)
 
     # check to see if paritions with split sentences already created
     split_sentences_present = check_files_exist(in_ss_out_names, 'sentence_split', args.partitions)
@@ -358,7 +364,6 @@ def main():
 
         if args.partitions == 1:
             return
-
 
     # encode partition files in parallel
     processes = []

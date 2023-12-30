@@ -1,6 +1,15 @@
 {
   "cSpell.words": [
+    "detokenize",
     "einops",
+    "Eleuther",
+    "endoftext",
+    "frombuffer",
+    "memmap",
+    "MMIDIDX",
+    "multimodal",
+    "nbytes",
+    "neox",
     "safetensors"
   ]
 }

@@ -1,12 +1,8 @@
 # Standard Library Imports
-import json
-import multiprocessing
-import os
 import struct
 import time
 from enum import Enum
 from functools import lru_cache
-from pathlib import Path
 from typing import List, Optional, Tuple, Type, Union
 
 # Third-Party Imports
@@ -14,12 +10,9 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
-from tqdm import tqdm
-
-# IPython
-from IPython import embed
 
 _INDEX_HEADER = b"MMIDIDX\x00\x00"
+
 
 class DType(Enum):
     """The np data type Enum for writing/reading the MMapIndexedDataset indices
@@ -101,7 +94,7 @@ class _IndexReader(object):
         idx_path (str): The path to the index file
 
         multimodal (bool): Whether the dataset is multimodal
-    
+
     Note:
         code largely borrowed from https://github.com/NVIDIA/Megatron-LM/blob/main/megatron/core/datasets/indexed_dataset.py
     """
@@ -124,7 +117,7 @@ class _IndexReader(object):
             offset = stream.tell()
 
         self.bin_buffer_mmap = np.memmap(idx_path, mode="r", order="C")
-        self.bin_buffer = memoryview(self.bin_buffer_mmap)
+        self.bin_buffer = memoryview(self.bin_buffer_mmap)  # type: ignore
 
         t_beg = time.time()
         self.sequence_lengths = np.frombuffer(
@@ -152,7 +145,7 @@ class _IndexReader(object):
 
         self.sequence_modes = None
         if multimodal:
-            t_beg = time.time()
+            t_beg = time.time()  # noqa: F841
             self.sequence_modes = np.frombuffer(
                 self.bin_buffer,
                 dtype=np.int8,
@@ -162,18 +155,17 @@ class _IndexReader(object):
                 + self.sequence_pointers.nbytes
                 + self.document_indices.nbytes,
             )
-            t_end = time.time()
+            t_end = time.time()  # noqa: F841
 
         assert self.sequence_lengths.shape[0] == len(self)
         assert self.sequence_lengths.shape[0] == self.sequence_count
         assert self.sequence_lengths.shape[0] == self.document_indices[-1]
         print(f"> total number of documents: {self.document_indices.shape[0] - 1}")
 
-
     def __del__(self) -> None:
         """Clean up the object
         """
-        self.bin_buffer_mmap._mmap.close()
+        self.bin_buffer_mmap._mmap.close()  # type: ignore
         del self.bin_buffer_mmap
 
     def __len__(self) -> int:
@@ -235,17 +227,17 @@ class PILEDataset(Dataset):
         Args:
             path_prefix (str): The index (.idx) and data (.bin) prefix
         """
-        self.index = _IndexReader(self.data_file_path.replace(".bin",  ".idx"), False)
+        self.index = _IndexReader(self.data_file_path.replace(".bin", ".idx"), False)
         self.bin_buffer_mmap = np.memmap((self.data_file_path), mode="r", order="C")
-        self.bin_buffer = memoryview(self.bin_buffer_mmap)
+        self.bin_buffer = memoryview(self.bin_buffer_mmap)  # type: ignore
 
         # split the dataset into the chunck of self.max_words
         if self.partition == "train":
             self.batches: List[Tuple] = []  # List of (sequence_pointer, sequence_length, sequence_mode)
-            
+
             # Assuming the calculation of total_bytes is correct as per your data structure
-            total_bytes = self.index[-1][0] + self.index[-1][1] * DType.size(self.index.dtype)
-            current_pointer = self.index[0][0]
+            total_bytes = self.index[-1][0] + self.index[-1][1] * DType.size(self.index.dtype)  # type: ignore
+            current_pointer = self.index[0][0]  # type: ignore
 
             while current_pointer < total_bytes:
                 increment = self.max_words * DType.size(self.index.dtype)
@@ -267,23 +259,23 @@ class PILEDataset(Dataset):
         Returns:
             int: The length of the dataset
         """
-        return len(self.batches) if self.partition == "train" else len(self.index)
+        return len(self.batches) if self.partition == "train" else len(self.index)  # type: ignore
 
     def __getitem__(self, index: int) -> dict[str, torch.Tensor]:
         IGNORE_INDEX = -100
 
         # Determine the batch or index to use based on the partition
         batch_data = self.batches if self.partition == "train" else self.index
-        sequence_pointer, sequence_length, sequence_mode = batch_data[index]
+        sequence_pointer, sequence_length, sequence_mode = batch_data[index]  # type: ignore
 
         # Adjust sequence length if not in training partition
         if self.partition != "train":
             sequence_length = min(sequence_length, self.max_words)
 
         # Load and process the encoded text
-        encoded_text = np.frombuffer(
-            self.bin_buffer,
-            dtype=self.index.dtype,
+        encoded_text = np.frombuffer(  # type: ignore
+            self.bin_buffer,  # type: ignore
+            dtype=self.index.dtype,  # type: ignore
             count=sequence_length,
             offset=sequence_pointer,
         ).astype(np.int32)  # Convert to int32 to avoid overflow issues

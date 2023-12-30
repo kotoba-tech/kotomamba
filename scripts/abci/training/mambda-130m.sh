@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=1
-#$ -l h_rt=5:00:00
+#$ -l h_rt=8:00:00
 #$ -j y
 #$ -o outputs/mamba-130m/
 #$ -cwd
@@ -57,7 +57,7 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=2.0e-3
+LR=1.0e-3
 LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
@@ -69,10 +69,10 @@ SEED=42
 
 # dataset
 NUM_WORKERS_DATALOADER=2
-DATASET_DIR="/groups/gcd50698/fujii/datasets/pile/merged"
+DATASET_DIR=/groups/gcd50698/fujii/datasets/pile/bin
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile-dataset
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -109,16 +109,17 @@ mpirun -np $NUM_GPUS \
   --weight_decay $WEIGHT_DECAY \
   --seed $SEED \
   --dataset "pile_dataset" \
-  --train_data_path $DATASET_DIR/merged.jsonl \
+  --train_data_path $DATASET_DIR/pile-mamba-validation_text_document.bin \
   --run_validation \
-  --val_data_path $DATASET_DIR/merged_valid.jsonl \
+  --val_data_path $DATASET_DIR/pile-mamba-validation_text_document.bin \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 500 \
+  --save_interval_iteration 100 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
+  --from_scratch \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \

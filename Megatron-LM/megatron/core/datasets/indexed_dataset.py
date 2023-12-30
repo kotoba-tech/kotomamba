@@ -173,8 +173,8 @@ class _IndexWriter(object):
         self.idx_writer.write(struct.pack("<Q", document_count))
 
         # the number of tokens per sequence
-        sequence_lengths = numpy.array(sequence_lengths, dtype=numpy.int32)
-        self.idx_writer.write(sequence_lengths.tobytes(order="C"))
+        sequence_lengths = numpy.array(sequence_lengths, dtype=numpy.int32)  # type: ignore
+        self.idx_writer.write(sequence_lengths.tobytes(order="C"))  # type: ignore
         del sequence_lengths
 
         # the byte offsets for all sequences
@@ -183,13 +183,13 @@ class _IndexWriter(object):
         del sequence_pointers
 
         # the sequence indices marking the end of each document
-        document_indices = numpy.array(document_indices, dtype=numpy.int64)
-        self.idx_writer.write(document_indices.tobytes(order="C"))
+        document_indices = numpy.array(document_indices, dtype=numpy.int64)  # type: ignore
+        self.idx_writer.write(document_indices.tobytes(order="C"))  # type: ignore
 
         # the mode per sequence
         if sequence_modes is not None:
-            sequence_modes = numpy.array(sequence_modes, dtype=numpy.int8)
-            self.idx_writer.write(sequence_modes.tobytes(order='C'))
+            sequence_modes = numpy.array(sequence_modes, dtype=numpy.int8)  # type: ignore
+            self.idx_writer.write(sequence_modes.tobytes(order='C'))  # type: ignore
             del sequence_modes
 
     def _sequence_pointers(self, sequence_lengths: List[int]) -> List[int]:
@@ -240,9 +240,9 @@ class _IndexReader(object):
             offset = stream.tell()
 
         self.bin_buffer_mmap = numpy.memmap(idx_path, mode="r", order="C")
-        self.bin_buffer = memoryview(self.bin_buffer_mmap)
+        self.bin_buffer = memoryview(self.bin_buffer_mmap)  # type: ignore
 
-        log_single_rank(logger, logging.INFO, f"\tExtract the sequence lengths")
+        log_single_rank(logger, logging.INFO, "\tExtract the sequence lengths")
         t_beg = time.time()
         self.sequence_lengths = numpy.frombuffer(
             self.bin_buffer, dtype=numpy.int32, count=self.sequence_count, offset=offset
@@ -250,7 +250,7 @@ class _IndexReader(object):
         t_end = time.time()
         log_single_rank(logger, logging.DEBUG, f"\t> time elapsed: {t_end - t_beg:4f} seconds")
 
-        log_single_rank(logger, logging.INFO, f"\tExtract the sequence pointers")
+        log_single_rank(logger, logging.INFO, "\tExtract the sequence pointers")
         t_beg = time.time()
         self.sequence_pointers = numpy.frombuffer(
             self.bin_buffer,
@@ -261,7 +261,7 @@ class _IndexReader(object):
         t_end = time.time()
         log_single_rank(logger, logging.DEBUG, f"\t> time elapsed: {t_end - t_beg:4f} seconds")
 
-        log_single_rank(logger, logging.INFO, f"\tExtract the document indices")
+        log_single_rank(logger, logging.INFO, "\tExtract the document indices")
         t_beg = time.time()
         self.document_indices = numpy.frombuffer(
             self.bin_buffer,
@@ -274,7 +274,7 @@ class _IndexReader(object):
 
         self.sequence_modes = None
         if multimodal:
-            log_single_rank(logger, logging.INFO, f"\tExtract the sequence modes")
+            log_single_rank(logger, logging.INFO, "\tExtract the sequence modes")
             t_beg = time.time()
             self.sequence_modes = numpy.frombuffer(
                 self.bin_buffer,
@@ -302,7 +302,7 @@ class _IndexReader(object):
     def __del__(self) -> None:
         """Clean up the object
         """
-        self.bin_buffer_mmap._mmap.close()
+        self.bin_buffer_mmap._mmap.close()  # type: ignore
         del self.bin_buffer_mmap
 
     def __len__(self) -> int:
@@ -366,7 +366,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         self.multimodal = multimodal
         self.index = _IndexReader(get_idx_path(self.path_prefix), self.multimodal)
         self.bin_buffer_mmap = numpy.memmap(get_bin_path(self.path_prefix), mode="r", order="C")
-        self.bin_buffer = memoryview(self.bin_buffer_mmap)
+        self.bin_buffer = memoryview(self.bin_buffer_mmap)  # type: ignore
 
     def __getstate__(self) -> Tuple[str, bool]:
         """Get the state during pickling
@@ -374,7 +374,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             Tuple[str, bool]: The state tuple
         """
-        return self.path_prefix, self.multimodal
+        return self.path_prefix, self.multimodal  # type: ignore
 
     def __setstate__(self, state: Tuple[str, bool]) -> None:
         """Set the state during un-pickling
@@ -389,7 +389,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         """Clean up the object
         """
         if self.bin_buffer_mmap is not None:
-            self.bin_buffer_mmap._mmap.close()
+            self.bin_buffer_mmap._mmap.close()  # type: ignore
         del self.bin_buffer_mmap
         del self.index
 
@@ -399,7 +399,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             int: The length of the dataset
         """
-        return len(self.index)
+        return len(self.index)  # type: ignore
 
     def __getitem__(
         self, idx: Union[int, numpy.integer, slice]
@@ -419,10 +419,10 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             modes at the index or index slice
         """
         if isinstance(idx, (int, numpy.integer)):
-            sequence_pointer, sequence_length, sequence_mode = self.index[idx]
-            sequence = numpy.frombuffer(
-                self.bin_buffer,
-                dtype=self.index.dtype,
+            sequence_pointer, sequence_length, sequence_mode = self.index[idx]  # type: ignore
+            sequence = numpy.frombuffer(  # type: ignore
+                self.bin_buffer,  # type: ignore
+                dtype=self.index.dtype,  # type: ignore
                 count=sequence_length,
                 offset=sequence_pointer,
             )
@@ -431,15 +431,15 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             start, stop, step = idx.indices(len(self))
             if step != 1:
                 raise ValueError("Slices into indexed_dataset must be contiguous")
-            sequence_lengths = self.index.sequence_lengths[idx]
-            sequence_modes = self.index.sequence_modes[idx] if self.multimodal else None
+            sequence_lengths = self.index.sequence_lengths[idx]  # type: ignore
+            sequence_modes = self.index.sequence_modes[idx] if self.multimodal else None  # type: ignore
             sequence_offsets = list(accumulate(sequence_lengths))
-            sequences = numpy.split(
+            sequences = numpy.split(  # type: ignore
                 numpy.frombuffer(
-                    self.bin_buffer,
-                    dtype=self.index.dtype,
+                    self.bin_buffer,  # type: ignore
+                    dtype=self.index.dtype,  # type: ignore
                     count=sum(sequence_lengths),
-                    offset=self.index.sequence_pointers[start],
+                    offset=self.index.sequence_pointers[start],  # type: ignore
                 ),
                 sequence_offsets[:-1],
             )
@@ -453,14 +453,14 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
 
         get(idx) is the same as [idx] but get() does not support slicing.
         """
-        sequence_pointer, sequence_length, sequence_mode = self.index[idx]
+        sequence_pointer, sequence_length, sequence_mode = self.index[idx]  # type: ignore
         if length is None:
             length = sequence_length - offset
-        sequence_pointer += offset * DType.size(self.index.dtype)
-        sequence = numpy.frombuffer(
-            self.bin_buffer, dtype=self.index.dtype, count=length, offset=sequence_pointer
+        sequence_pointer += offset * DType.size(self.index.dtype)  # type: ignore
+        sequence = numpy.frombuffer(  # type: ignore
+            self.bin_buffer, dtype=self.index.dtype, count=length, offset=sequence_pointer  # type: ignore
         )
-        return (sequence, sequence_mode) if sequence_mode is not None else sequence
+        return (sequence, sequence_mode) if sequence_mode is not None else sequence  # type: ignore
 
     @property
     def sequence_lengths(self) -> numpy.ndarray:
@@ -469,7 +469,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             numpy.ndarray: The sequence lengths
         """
-        return self.index.sequence_lengths
+        return self.index.sequence_lengths  # type: ignore
 
     @property
     def document_indices(self) -> numpy.ndarray:
@@ -478,7 +478,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             numpy.ndarray: The document indices
         """
-        return self.index.document_indices
+        return self.index.document_indices  # type: ignore
 
     def get_document_indices(self) -> numpy.ndarray:
         """Get the document indices
@@ -488,7 +488,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             numpy.ndarray: The document indices
         """
-        return self.index.document_indices
+        return self.index.document_indices  # type: ignore
 
     def set_document_indices(self, document_indices: numpy.ndarray) -> None:
         """Set the document indices
@@ -498,7 +498,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Args:
             document_indices (numpy.ndarray): The document indices
         """
-        self.index.document_indices = document_indices
+        self.index.document_indices = document_indices  # type: ignore
 
     @property
     def sequence_modes(self) -> numpy.ndarray:
@@ -507,7 +507,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
         Returns:
             numpy.ndarray: The sequence modes
         """
-        return self.index.sequence_modes
+        return self.index.sequence_modes  # type: ignore
 
     @staticmethod
     def exists(path_prefix: str) -> bool:
@@ -558,7 +558,7 @@ class MMapIndexedDatasetBuilder(object):
         self.data_file.write(np_array.tobytes(order="C"))
         self.sequence_lengths.append(np_array.size)
         if self.multimodal:
-            self.sequence_modes.append(mode)
+            self.sequence_modes.append(mode)  # type: ignore
 
     def add_document(
         self, tensor: torch.Tensor, lengths: List[int], modes: Optional[List[int]] = None
@@ -576,7 +576,7 @@ class MMapIndexedDatasetBuilder(object):
         self.sequence_lengths.extend(lengths)
         self.document_indices.append(len(self.sequence_lengths))
         if self.multimodal:
-            self.sequence_modes.extend(modes if modes is not None else [0] * lengths)
+            self.sequence_modes.extend(modes if modes is not None else [0] * lengths)  # type: ignore
 
     def end_document(self) -> None:
         """Finalize the document, for use with MMapIndexedDatasetBuilder.add_item
@@ -598,7 +598,7 @@ class MMapIndexedDatasetBuilder(object):
         self.document_indices.extend((offset + index.document_indices)[1:])
 
         if self.multimodal:
-            self.sequence_modes.extend(index.sequence_modes)
+            self.sequence_modes.extend(index.sequence_modes)  # type: ignore
 
         # Concatenate data
         with open(get_bin_path(path_prefix), "rb") as f:

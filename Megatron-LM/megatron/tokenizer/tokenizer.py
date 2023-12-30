@@ -5,10 +5,8 @@
 from abc import ABC
 from abc import abstractmethod
 from transformers import AutoTokenizer
-
-from .bert_tokenization import FullTokenizer as FullBertTokenizer
 from .gpt2_tokenization import GPT2Tokenizer
-from typing import List, Union
+
 
 def build_tokenizer(args):
     """Initialize tokenizer."""
@@ -17,22 +15,12 @@ def build_tokenizer(args):
               flush=True)
 
     # Select and instantiate the tokenizer.
-    if args.tokenizer_type == 'BertWordPieceLowerCase':
-        assert args.vocab_file is not None
-        tokenizer = _BertWordPieceTokenizer(vocab_file=args.vocab_file,
-                                            lower_case=True,
-                                            vocab_extra_ids=args.vocab_extra_ids)
-    elif args.tokenizer_type == 'BertWordPieceCase':
-        assert args.vocab_file is not None
-        tokenizer = _BertWordPieceTokenizer(vocab_file=args.vocab_file,
-                                            lower_case=False,
-                                            vocab_extra_ids=args.vocab_extra_ids)
+    if args.tokenizer_type == 'MambaTokenizer':
+        tokenizer = _MambaTokenizer()
     elif args.tokenizer_type == 'GPT2BPETokenizer':
         assert args.vocab_file is not None
         assert args.merge_file is not None
         tokenizer = _GPT2BPETokenizer(args.vocab_file, args.merge_file)
-    elif args.tokenizer_type == 'MambaTokenizer':
-        tokenizer = _MambaTokenizer()
     elif args.tokenizer_type == 'GPTSentencePieceTokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _GPTSentencePieceTokenizer(args.tokenizer_model)
@@ -128,137 +116,6 @@ class AbstractTokenizer(ABC):
                                   'tokenizer'.format(self.name))
 
 
-class _BertWordPieceTokenizer(AbstractTokenizer):
-    """Original BERT wordpiece tokenizer."""
-
-    def __init__(self, vocab_file, lower_case=True, vocab_extra_ids=0):
-        if lower_case:
-            name = 'BERT Lower Case'
-        else:
-            name = 'BERT Upper Case'
-        super().__init__(name)
-        self.tokenizer = FullBertTokenizer(vocab_file, do_lower_case=lower_case)
-        self.cls_id = self.tokenizer.vocab['[CLS]']
-        self.sep_id = self.tokenizer.vocab['[SEP]']
-        self.pad_id = self.tokenizer.vocab['[PAD]']
-        self.mask_id = self.tokenizer.vocab['[MASK]']
-        self._additional_special_tokens = []
-
-        # (dsachan) Add BOS and EOS tokens
-        SPECIAL_TOKENS = {'eos_token': '[EOS]',
-                          'bos_token': '[BOS]'}
-        self._bos_token = '[BOS]'
-        self.add_token(self._bos_token)
-        self._bos_token_id = self.vocab.get(self._bos_token)
-
-        self._eos_token = '[EOS]'
-        self.add_token(self._eos_token)
-        self._eos_token_id = self.vocab.get(self._eos_token)
-
-        # (dsachan) Add additional special tokens
-        # These can be used as sentinel tokens in T5 model inputs
-        additional_special_tokens = []
-        additional_special_tokens.extend(
-            ["<extra_id_{}>".format(i) for i in range(vocab_extra_ids)])
-        self.add_additional_special_tokens(additional_special_tokens)
-
-    def add_token(self, token):
-        if token not in self.vocab:
-            self.inv_vocab[self.vocab_size] = token
-            # self.vocab_size comes from len(vocab)
-            # and it will increase as we add elements
-            self.vocab[token] = self.vocab_size
-
-    def add_additional_special_tokens(self, tokens_list):
-        setattr(self, "additional_special_tokens", tokens_list)
-        for value in tokens_list:
-            self.add_token(value)
-
-    @property
-    def vocab_size(self):
-        return self.tokenizer.vocab_size()
-
-    @property
-    def vocab(self):
-        return self.tokenizer.vocab
-
-    @property
-    def inv_vocab(self):
-        return self.tokenizer.inv_vocab
-
-    def tokenize(self, text):
-        text_tokens = self.tokenizer.tokenize(text)
-        return self.tokenizer.convert_tokens_to_ids(text_tokens)
-
-    def decode(self, ids):
-        tokens = self.tokenizer.convert_ids_to_tokens(ids)
-        return self.tokenizer.convert_tokens_to_string(tokens)
-
-    def decode_token_ids(self, token_ids):
-        tokens = self.tokenizer.convert_ids_to_tokens(token_ids)
-        exclude_list = ['[PAD]', '[CLS]']
-        non_pads = [t for t in tokens if t not in exclude_list]
-
-        result = ""
-        for s in non_pads:
-            if s.startswith("##"):
-                result += s[2:]
-            else:
-                result += " " + s
-
-        return result
-
-    @property
-    def cls(self):
-        return self.cls_id
-
-    @property
-    def sep(self):
-        return self.sep_id
-
-    @property
-    def pad(self):
-        return self.pad_id
-
-    @property
-    def mask(self):
-        return self.mask_id
-
-    @property
-    def bos_token(self):
-        """ Beginning of sentence token id """
-        return self._bos_token
-
-    @property
-    def eos_token(self):
-        """ End of sentence token id """
-        return self._eos_token
-
-    @property
-    def additional_special_tokens(self):
-        """ All the additional special tokens you may want to use (list of strings)."""
-        return self._additional_special_tokens
-
-    @property
-    def bos_token_id(self):
-        """ Id of the beginning of sentence token in the vocabulary."""
-        return self._bos_token_id
-
-    @property
-    def eos_token_id(self):
-        """ Id of the end of sentence token in the vocabulary."""
-        return self._eos_token_id
-
-    @property
-    def additional_special_tokens_ids(self):
-        """ Ids of all the additional special tokens in the vocabulary (list of integers)."""
-        return [self.vocab.get(token) for token in self._additional_special_tokens]
-
-    @additional_special_tokens.setter
-    def additional_special_tokens(self, value):
-        self._additional_special_tokens = value
-
-
 class _GPT2BPETokenizer(AbstractTokenizer):
     """Original GPT2 BPE tokenizer."""
 
@@ -299,7 +156,7 @@ class _MambaTokenizer(AbstractTokenizer):
     def __init__(self):
         name = "MambaTokenizer"
         super().__init__(name)
-        #TODO: check if this is the correct vocab size.
+        # TODO: check if this is the correct vocab size.
         self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
         self.eod_id = self.tokenizer.convert_tokens_to_ids("<|endoftext|>")
         self.pad_id = self.tokenizer.convert_tokens_to_ids("<|padding|>")
@@ -314,7 +171,7 @@ class _MambaTokenizer(AbstractTokenizer):
 
     @property
     def inv_vocab(self):
-        return self.tokenizer.decoder
+        return self.tokenizer.decoder  # type: ignore
 
     def tokenize(self, text: str):
         return self.tokenizer.encode(text)
@@ -335,7 +192,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
         super().__init__(name)
 
         import sentencepiece
-        self.tokenizer = sentencepiece.SentencePieceProcessor(model_file=model_file)
+        self.tokenizer = sentencepiece.SentencePieceProcessor(model_file=model_file)  # type: ignore
         self._initalize(vocab_extra_ids)
 
     def _populate_vocab(self):
@@ -343,7 +200,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
         self._inv_vocab = {}
 
         for i in range(len(self.tokenizer)):
-            t = self.tokenizer.id_to_piece(i)
+            t = self.tokenizer.id_to_piece(i)  # type: ignore
             self._inv_vocab[i] = t
             self._vocab[t] = i
 
@@ -373,7 +230,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
 
         pad_id = self.tokenizer.pad_id()
         try:
-            pad_token = self.tokenizer.id_to_piece(pad_id)
+            pad_token = self.tokenizer.id_to_piece(pad_id)  # type: ignore
         except IndexError:
             pad_token = '<PAD>'
         _add_special_token(pad_token)
@@ -381,7 +238,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
 
         bos_id = self.tokenizer.bos_id()
         try:
-            bos_token = self.tokenizer.id_to_piece(bos_id)
+            bos_token = self.tokenizer.id_to_piece(bos_id)  # type: ignore
         except IndexError:
             bos_token = '<BOS>'
         _add_special_token(bos_token)
@@ -389,7 +246,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
 
         eos_id = self.tokenizer.eos_id()
         try:
-            eos_token = self.tokenizer.id_to_piece(eos_id)
+            eos_token = self.tokenizer.id_to_piece(eos_id)  # type: ignore
         except IndexError:
             eos_token = '<EOS>'
         _add_special_token(eos_token)
@@ -436,14 +293,14 @@ class _SentencePieceTokenizer(AbstractTokenizer):
             if len(indices) == 0:
                 break
 
-            next_token = min(indices, key=indices.get)
+            next_token = min(indices, key=indices.get)  # type: ignore
             next_idx = idx + indices[next_token]
 
-            ids.extend(self.tokenizer.encode_as_ids(text[idx:next_idx]))
+            ids.extend(self.tokenizer.encode_as_ids(text[idx:next_idx]))  # type: ignore
             ids.append(self._special_tokens[next_token])
             idx = next_idx + len(next_token)
 
-        ids.extend(self.tokenizer.encode_as_ids(text[idx:]))
+        ids.extend(self.tokenizer.encode_as_ids(text[idx:]))  # type: ignore
         return ids
 
     # From:
@@ -454,11 +311,11 @@ class _SentencePieceTokenizer(AbstractTokenizer):
 
         for i, id in enumerate(ids):
             if id in self._inv_special_tokens:
-                text += self.tokenizer.decode_ids(ids[last_i:i]) + " "
+                text += self.tokenizer.decode_ids(ids[last_i:i]) + " "  # type: ignore
                 text += self._inv_special_tokens[id] + " "
                 last_i = i + 1
 
-        text += self.tokenizer.decode_ids(ids[last_i:])
+        text += self.tokenizer.decode_ids(ids[last_i:])  # type: ignore
         return text
 
     @property
@@ -501,6 +358,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
     def additional_special_tokens_ids(self):
         return [self.vocab[k] for k in self._t5_tokens]
 
+
 class _GPTSentencePieceTokenizer(_SentencePieceTokenizer):
     """SentencePieceTokenizer-Megatron wrapper"""
 
@@ -515,10 +373,10 @@ class _GPTSentencePieceTokenizer(_SentencePieceTokenizer):
         self._eos_id = self.tokenizer.eos_id()
 
     def tokenize(self, text):
-        return self.tokenizer.encode_as_ids(text)
+        return self.tokenizer.encode_as_ids(text)  # type: ignore
 
     def detokenize(self, ids):
-        return self.tokenizer.decode_ids(ids)
+        return self.tokenizer.decode_ids(ids)  # type: ignore
 
     @property
     def cls(self):
@@ -540,6 +398,7 @@ class _GPTSentencePieceTokenizer(_SentencePieceTokenizer):
     def additional_special_tokens_ids(self):
         return None
 
+
 class _Llama2Tokenizer(_SentencePieceTokenizer):
     """SentencePieceTokenizer-Megatron wrapper"""
 
@@ -554,12 +413,12 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
         self.bos_id: int = self.tokenizer.bos_id()
         self.eos_id: int = self.tokenizer.eos_id()
         self.pad_id: int = self.tokenizer.pad_id()
-        assert self.tokenizer.vocab_size() == self.tokenizer.get_piece_size()
+        assert self.tokenizer.vocab_size() == self.tokenizer.get_piece_size()  # type: ignore
 
     def tokenize(self, s: str, bos=True, eos=False):
         '''Default args for text completion, not chat/dialog.'''
         assert type(s) is str
-        t = self.tokenizer.encode(s)
+        t = self.tokenizer.encode(s)  # type: ignore
         if bos:
             t = [self.bos_id] + t
         if eos:
@@ -567,7 +426,7 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
         return t
 
     def detokenize(self, ids):
-        return self.tokenizer.decode_ids(ids)
+        return self.tokenizer.decode_ids(ids)  # type: ignore
 
     @property
     def cls(self):
@@ -589,11 +448,12 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
     def additional_special_tokens_ids(self):
         return None
 
+
 class _NullTokenizer:
     def __init__(self, vocab_size):
         vocab_size = int(vocab_size)
         self._eos_id = vocab_size
-        self.vocab_size = vocab_size+1
+        self.vocab_size = vocab_size + 1
 
     def tokenize(self, text):
         return [int(x) for x in text.split(' ')]
