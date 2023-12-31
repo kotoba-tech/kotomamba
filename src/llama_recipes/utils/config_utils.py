@@ -89,8 +89,7 @@ def generate_dataset_config(
         k: v for k, v in inspect.getmembers(datasets)
     }[train_config.dataset]()
 
-    print_rank_0(f"dataset_config: {dataset_config}, type({type(dataset_config)})")
-
     update_config(dataset_config, **kwargs)
+    print_rank_0(f"dataset_config: {dataset_config}, type({type(dataset_config)})")
 
     return dataset_config

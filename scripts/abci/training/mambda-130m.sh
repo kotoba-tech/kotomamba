@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=1
-#$ -l h_rt=8:00:00
+#$ -l rt_AF=2
+#$ -l h_rt=7:23:00:00
 #$ -j y
 #$ -o outputs/mamba-130m/
 #$ -cwd
@@ -44,7 +44,7 @@ while read -r line; do
 done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 
 # training settings
-NUM_EPOCHS=5
+NUM_EPOCHS=1
 
 # batch size
 BATCH_SIZE=16
@@ -72,7 +72,7 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/groups/gcd50698/fujii/datasets/pile/bin
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile-dataset
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -109,13 +109,13 @@ mpirun -np $NUM_GPUS \
   --weight_decay $WEIGHT_DECAY \
   --seed $SEED \
   --dataset "pile_dataset" \
-  --train_data_path $DATASET_DIR/pile-mamba-validation_text_document.bin \
+  --train_data_path $DATASET_DIR/pile-mamba-train_text_document.bin \
   --run_validation \
   --val_data_path $DATASET_DIR/pile-mamba-validation_text_document.bin \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 100 \
+  --save_interval_iteration 500 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
