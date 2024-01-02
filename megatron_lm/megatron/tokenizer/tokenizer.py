@@ -16,11 +16,15 @@ def build_tokenizer(args):
 
     # Select and instantiate the tokenizer.
     if args.tokenizer_type == 'MambaTokenizer':
-        tokenizer = _MambaTokenizer()
+        assert args.tokenizer_model is not None
+        tokenizer = _MambaTokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'GPT2BPETokenizer':
         assert args.vocab_file is not None
         assert args.merge_file is not None
         tokenizer = _GPT2BPETokenizer(args.vocab_file, args.merge_file)
+    elif args.tokenizer_type == 'SentencePieceTokenizer':
+        assert args.tokenizer_model is not None
+        tokenizer = _SentencePieceTokenizer(args.tokenizer_model, vocab_extra_ids=args.vocab_extra_ids)
     elif args.tokenizer_type == 'GPTSentencePieceTokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _GPTSentencePieceTokenizer(args.tokenizer_model)
@@ -153,11 +157,11 @@ class _GPT2BPETokenizer(AbstractTokenizer):
 class _MambaTokenizer(AbstractTokenizer):
     """Designed to Integrate HF's Tokenizer library."""
 
-    def __init__(self):
+    def __init__(self, model_file: str):
         name = "MambaTokenizer"
         super().__init__(name)
         # TODO: check if this is the correct vocab size.
-        self.tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_file)
         self.eod_id = self.tokenizer.convert_tokens_to_ids("<|endoftext|>")
         self.pad_id = self.tokenizer.convert_tokens_to_ids("<|padding|>")
 
