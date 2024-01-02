@@ -123,7 +123,7 @@ def load_model_state_dict(model: torch.nn.Module, path: str) -> None:
         print(f"Loading model state dict from {latest_checkpoint_path}/model.pt")
 
     state_dict = torch.load(f"{latest_checkpoint_path}/model.pt", map_location="cpu")
-    model.load_state_dict(state_dict, assign=True)  # assign checkpoint tensor
+    model.load_state_dict(state_dict)
     del state_dict
 
     if torch_distributed.get_rank() == 0:
