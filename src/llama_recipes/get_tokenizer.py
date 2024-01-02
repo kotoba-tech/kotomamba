@@ -2,8 +2,17 @@ from transformers import AutoTokenizer, LlamaTokenizer
 from llama_recipes.configs import train_config
 from typing import Type
 
+import sys
+import os
 
-def get_tokenizer(train_config: Type[train_config]) -> AutoTokenizer | LlamaTokenizer:
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root_dir = f"{current_dir}/../../"
+
+sys.path.append(project_root_dir)
+from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
+
+
+def get_tokenizer(train_config: Type[train_config]) -> (AutoTokenizer | LlamaTokenizer | _SentencePieceTokenizer):
     if "Llama" in train_config.tokenizer_name:
         tokenizer = LlamaTokenizer.from_pretrained(train_config.tokenizer_name)
         tokenizer.add_special_tokens({"pad_token": "<PAD>"})
@@ -67,6 +76,11 @@ def get_tokenizer(train_config: Type[train_config]) -> AutoTokenizer | LlamaToke
         tokenizer = AutoTokenizer.from_pretrained(
             train_config.tokenizer_name
         )
+
+        return tokenizer  # type: ignore
+
+    elif "llm-jp" in train_config.tokenizer_name:
+        tokenizer = tokenizer = _SentencePieceTokenizer(train_config.tokenizer_name)
 
         return tokenizer  # type: ignore
 
