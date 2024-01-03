@@ -7,10 +7,11 @@
 
 source .env/bin/activate
 
-cd Megatron-LM
+cd megatron_lm
 
-DATASET_PATH=/groups/gcd50698/fujii/datasets/mamba_ja_en/merged.jsonl
-OUTPUT_DIR=/groups/gcd50698/fujii/datasets/mamba_ja_en
+DATASET_PATH=/groups/gaf51275/llama/datasets/mamba_ja_en/merged.jsonl
+OUTPUT_DIR=/groups/gaf51275/llama/datasets/mamba_ja_en
+
 mkdir -p $OUTPUT_DIR
 
 python tools/preprocess_data.py \
