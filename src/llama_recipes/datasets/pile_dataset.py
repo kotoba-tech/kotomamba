@@ -212,7 +212,6 @@ class PILEDataset(Dataset):
 
         self.partition = partition
         self.max_words: int = dataset_config.context_size
-        self.tokenizer: PreTrainedTokenizer = tokenizer
         self.index = None
         self.bin_buffer = None
         self.bin_buffer_mmap = None
