@@ -1,4 +1,5 @@
 from transformers import AutoTokenizer, LlamaTokenizer
+from transformers.tokenization_utils import PreTrainedTokenizer
 from llama_recipes.configs import train_config
 from typing import Type
 
@@ -12,7 +13,7 @@ sys.path.append(project_root_dir)
 from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
 
 
-def get_tokenizer(train_config: Type[train_config]) -> (AutoTokenizer | LlamaTokenizer | _SentencePieceTokenizer):
+def get_tokenizer(train_config: Type[train_config]) -> (PreTrainedTokenizer | LlamaTokenizer | _SentencePieceTokenizer):
     if "Llama" in train_config.tokenizer_name:
         tokenizer = LlamaTokenizer.from_pretrained(train_config.tokenizer_name)
         tokenizer.add_special_tokens({"pad_token": "<PAD>"})

@@ -295,14 +295,21 @@ class MambaLMHeadModel(GenerationMixin, PreTrainedModel):
         device=None,
         dtype=None,
         from_scratch=False,
+        vocab_size=None,
         **kwargs
     ):
         config = load_config_hf(pretrained_model_name)
         config = PretrainedConfig(**config)
+        if vocab_size is not None and from_scratch:
+            config.vocab_size = vocab_size
+        elif vocab_size is not None and vocab_size != config.vocab_size:
+            print(f"vocab_size is set to {vocab_size} but config vocab size is {config.vocab_size}.")
+            raise ValueError
 
         model = cls(config=config, device=device, dtype=dtype, **kwargs)
 
         if from_scratch:
+            print("from_scratch argument is set. start from scratch training")
             return model
 
         model.load_state_dict(

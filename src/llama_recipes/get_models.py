@@ -301,11 +301,15 @@ def get_model(
 
     elif "mamba" in train_config.model_name:
         from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+        from llama_recipes.get_tokenizer import get_tokenizer
+
+        tokenizer = get_tokenizer(train_config=train_config)
 
         model = MambaLMHeadModel.from_pretrained(
             train_config.model_name,
             dtype=torch.float16,
             from_scratch=train_config.from_scratch,
+            vocab_size=tokenizer.vocab_size,
         )
 
         return model  # type: ignore
