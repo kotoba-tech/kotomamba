@@ -28,6 +28,7 @@
 3. install Mamba
 
     ```bash
+    pip install packaging wheel
     pip install causal-conv1d>=1.1.0
     pip install -e .
     ```
