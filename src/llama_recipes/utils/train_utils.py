@@ -124,10 +124,11 @@ def train(
     total_iterations: int = len(train_dataloader) // gradient_accumulation_steps
     checkpoint_load_flag: bool = False
 
-    # load checkpoint(model, optimizer, scheduler, sampler)
+    # load checkpoint(model, optimizer, scheduler, sampler, RNG)
     if train_config.load_checkpoint_path != "":
         last_iteration = get_latest_iteration(train_config.load_checkpoint_path)
         last_epoch = last_iteration // total_iterations
+        checkpoint_load_flag = True
 
     wandb_iteration: int = 0
     if last_epoch == train_config.num_epochs:
