@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=1
-#$ -l h_rt=10:00:00
+#$ -l rt_AF=2
+#$ -l h_rt=6:30:00
 #$ -j y
 #$ -o outputs/mamba-1.4b/
 #$ -cwd
@@ -69,10 +69,10 @@ SEED=42
 
 # dataset
 NUM_WORKERS_DATALOADER=2
-DATASET_DIR="/groups/gcd50698/fujii/datasets/pile/merged"
+DATASET_DIR=/groups/gaf51275/llama/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-1.4b-pile
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-1.4b/pile-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -80,6 +80,9 @@ MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-1.4b
 
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
+
+# ldconfig
+alias ldconfig=/usr/sbin/ldconfig
 
 # run
 mpirun -np $NUM_GPUS \
@@ -93,13 +96,13 @@ mpirun -np $NUM_GPUS \
   --enable_fsdp \
   --low_cpu_fsdp \
   --mixed_precision \
-  --fsdp_cpu_offload \
   --use_bf16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
-  --tokenizer_name EleutherAI/gpt-neox-20b \
+  --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
   --batch_size $BATCH_SIZE \
   --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS \
+  --fsdp_activation_checkpointing \
   --lr $LR \
   --lr_min $LR_MIN \
   --lr_warmup $LR_WARMUP \
@@ -108,17 +111,16 @@ mpirun -np $NUM_GPUS \
   --weight_decay $WEIGHT_DECAY \
   --seed $SEED \
   --dataset "pile_dataset" \
-  --train_data_path $DATASET_DIR/merged.jsonl \
-  --run_validation \
-  --val_data_path $DATASET_DIR/merged_valid.jsonl \
+  --train_data_path $DATASET_DIR/mamba-en-ja_text_document.bin \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 500 \
+  --save_interval_iteration 1000 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
+  --from_scratch \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "mamba-1.4b"
+  --wandb_name "ja-en-mamba-1.4b"
