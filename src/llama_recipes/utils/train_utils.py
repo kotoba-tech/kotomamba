@@ -17,7 +17,6 @@ from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torch.nn.utils import clip_grad_norm_  # type: ignore
 from tqdm import tqdm
 from transformers import LlamaTokenizer
-from llama_recipes.configs.fsdp import fsdp_config
 from llama_recipes.configs.training import train_config
 from llama_recipes.policies import fpSixteen, bfSixteen_mixed, get_decoder_layer_wrapper
 from llama_recipes.utils.memory_utils import MemoryTrace
@@ -50,7 +49,6 @@ def train(
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
     gradient_accumulation_steps: int,
     train_config: Type[train_config],
-    fsdp_config: Optional[Type[fsdp_config]] = None,
     local_rank: Optional[int] = None,
     rank: Optional[int] = None,
 ):
@@ -130,7 +128,14 @@ def train(
 
             accumulation_loss: float = 0.0
             # checkpointをloadした場合は、次のステップから始める
-            next_step: int = last_iteration * gradient_accumulation_steps if last_iteration != 0 else 0
+            next_step: int = (
+                last_iteration % total_length
+            ) * gradient_accumulation_steps if last_iteration != 0 else 0
+
+            train_dataloader = iter(train_dataloader)  # type: ignore
+            for _ in range(next_step):
+                next(train_dataloader)  # type: ignore
+
             for step, batch in enumerate(train_dataloader, start=next_step):
                 model.train()
                 wandb_iteration = epoch * total_length + step // gradient_accumulation_steps
@@ -318,7 +323,7 @@ def train(
 
     # saving the training params including fsdp setting for reference.
     if train_config.enable_fsdp and not train_config.use_peft:
-        save_train_params(train_config, fsdp_config, rank)
+        save_train_params(train_config, rank)
 
     return results
 
@@ -460,7 +465,7 @@ def print_model_size(model, config, rank: int = 0) -> None:
         print(f"\n--> {config.model_name} has {total_params / 1e6} Million params\n")
 
 
-def get_policies(cfg, rank: int, model_name: str):
+def get_policies(cfg: type[train_config], rank: int, model_name: str):
     """Get the policies for mixed precision and fsdp wrapping"""
 
     verify_bfloat_support: bool = (
@@ -492,18 +497,18 @@ def get_policies(cfg, rank: int, model_name: str):
     return mixed_precision_policy, wrapping_policy
 
 
-def save_train_params(train_config, fsdp_config, rank):
+def save_train_params(train_config: type[train_config], rank: int) -> None:
     """
     This function saves the train_config and FSDP config into a train_params.yaml.
     This will be used by converter script in the inference folder to fetch the HF model name or path.
     It also would be helpful as a log for future references.
     """
-    # Convert the train_config and fsdp_config objects to dictionaries,
+    # Convert the train_config to dictionaries,
     # converting all values to strings to ensure they can be serialized into a YAML file
     train_config_dict = {k: str(v) for k, v in vars(train_config).items() if not k.startswith("__")}
-    fsdp_config_dict = {k: str(v) for k, v in vars(fsdp_config).items() if not k.startswith("__")}
+
     # Merge the two dictionaries into one
-    train_params_dict = {**train_config_dict, **fsdp_config_dict}
+    train_params_dict = {**train_config_dict}
     # Construct the folder name (following FSDP checkpointing style) using properties of the train_config object
     folder_name: str = train_config.save_checkpoint_path
 

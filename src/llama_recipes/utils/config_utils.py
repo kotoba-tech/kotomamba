@@ -17,7 +17,6 @@ from llama_recipes.configs import (  # noqa: F401
     llama_adapter_config,
     prefix_config,
     train_config,
-    fsdp_config,
 )
 from llama_recipes.configs.datasets import (
     samsum_dataset,
@@ -31,7 +30,7 @@ from llama_recipes.utils.distributed import print_rank_0
 
 
 def update_config(
-    config: tuple[Type[train_config | fsdp_config]] | Type[train_config | fsdp_config] | Any,
+    config: Type[train_config] | Any,
     **kwargs: dict[str, Any],
 ) -> None:
     if isinstance(config, (tuple, list)):

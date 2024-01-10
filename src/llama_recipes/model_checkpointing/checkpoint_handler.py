@@ -35,7 +35,6 @@ import torch.distributed as torch_distributed
 from llama_recipes.configs import train_config
 from typing import Type, Any, Optional
 
-from llama_recipes.configs.fsdp import fsdp_config
 from llama_recipes.utils.distributed import print_rank_0, is_rank_0
 
 
@@ -313,12 +312,11 @@ def save_checkpoint(
     optimizer: torch.optim.AdamW,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     train_config: Type[train_config],
-    fsdp_config: Type[fsdp_config],
     rank: int,
     epoch: int,
     iteration: int,
 ) -> None:
-    if fsdp_config.checkpoint_type == StateDictType.FULL_STATE_DICT:  # type: ignore
+    if train_config.checkpoint_type == StateDictType.FULL_STATE_DICT:  # type: ignore
         save_model_checkpoint(model, optimizer, rank, train_config, epoch=epoch)
         if train_config.save_optimizer:
             save_optimizer_checkpoint(model, optimizer, rank, train_config, epoch=epoch)
@@ -326,7 +324,7 @@ def save_checkpoint(
             print_rank_0("=====================================================")
 
     # ABCI Llama-2 Continual Learning use below
-    elif fsdp_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:  # type: ignore
+    elif train_config.checkpoint_type == StateDictType.SHARDED_STATE_DICT:  # type: ignore
         print(f" Saving the FSDP model checkpoints using SHARDED_STATE_DICT, rank {rank}")
         print("=====================================================")
 

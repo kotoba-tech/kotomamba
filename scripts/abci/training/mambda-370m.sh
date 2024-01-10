@@ -94,7 +94,7 @@ mpirun -np $NUM_GPUS \
   --low_cpu_fsdp \
   --mixed_precision \
   --fsdp_cpu_offload \
-  --pure_bf16 \
+  --use_bf16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name EleutherAI/gpt-neox-20b \

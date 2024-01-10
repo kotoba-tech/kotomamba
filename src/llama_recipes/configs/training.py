@@ -4,6 +4,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from torch.distributed.fsdp import ShardingStrategy  # type: ignore
+from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType  # type: ignore
+
 
 @dataclass
 class train_config:
@@ -12,6 +15,13 @@ class train_config:
 
     enable_fsdp: bool = False
     low_cpu_fsdp: bool = False
+    fsdp_cpu_offload: bool = False
+    fsdp_activation_checkpointing: bool = False
+
+    sharding_strategy: ShardingStrategy = ShardingStrategy.FULL_SHARD
+    checkpoint_type: StateDictType = (
+        StateDictType.SHARDED_STATE_DICT
+    )
 
     num_epochs: int = 1
     train_iteration: int = 1
@@ -19,6 +29,7 @@ class train_config:
     batch_size: int = 4
     gradient_accumulation_steps: int = 1
 
+    optimizer: str = "AdamW"
     lr: float = 1e-4
     lr_min: float = 1e-5
     lr_decay: float = 0.80  # ratio of decay
@@ -38,6 +49,7 @@ class train_config:
     seed: int = 42
 
     use_fp16: bool = False
+    use_bf16: bool = True
     mixed_precision: bool = True
 
     dataset: str = ""

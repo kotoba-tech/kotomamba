@@ -1,17 +1,24 @@
 {
   "cSpell.words": [
+    "anyprecision",
     "detokenize",
     "einops",
     "Eleuther",
     "endoftext",
     "frombuffer",
     "itemsize",
+    "kotomamba",
     "memmap",
+    "memtrace",
     "MMIDIDX",
     "multimodal",
     "nbytes",
     "neox",
+    "numel",
+    "pbar",
+    "peft",
     "safetensors",
+    "silu",
     "tflops"
   ]
 }

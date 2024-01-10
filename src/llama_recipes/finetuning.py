@@ -24,7 +24,7 @@ from transformers import (
     default_data_collator,
 )
 
-from llama_recipes.configs import fsdp_config, train_config
+from llama_recipes.configs import train_config
 from llama_recipes.policies import AnyPrecisionAdamW, apply_fsdp_checkpointing
 from llama_recipes.utils import fsdp_auto_wrap_policy
 from llama_recipes.utils.config_utils import (
@@ -77,7 +77,7 @@ def main(**kwargs) -> None:
     logging.basicConfig(level=logging.WARNING)
 
     # Update the configuration for the training and sharding process
-    update_config((train_config, fsdp_config), **kwargs)  # type: ignore
+    update_config((train_config), **kwargs)  # type: ignore
 
     # Set the seeds for reproducibility
     set_seed(train_config)
@@ -146,8 +146,8 @@ def main(**kwargs) -> None:
     if train_config.quantization:
         model = prepare_model_for_int8_training(model)
 
-    # Convert the model to bfloat16 if fsdp and pure_bf16 is enabled
-    if train_config.enable_fsdp and fsdp_config.pure_bf16:
+    # Convert the model to bfloat16 if fsdp and use_bf16 is enabled
+    if train_config.enable_fsdp and train_config.use_bf16:
         model.to(torch.bfloat16)  # type: ignore
 
     tokenizer = get_tokenizer(train_config)  # type: ignore
@@ -165,7 +165,7 @@ def main(**kwargs) -> None:
             freeze_transformer_layers(model=model, num_layer=train_config.num_freeze_layers)
 
         mixed_precision_policy, wrapping_policy = get_policies(
-            cfg=fsdp_config,
+            cfg=train_config,
             rank=get_rank(),
             model_name=train_config.model_name,
         )
@@ -179,9 +179,9 @@ def main(**kwargs) -> None:
         model = FSDP(
             model,  # type: ignore
             auto_wrap_policy=my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
-            cpu_offload=CPUOffload(offload_params=True) if fsdp_config.fsdp_cpu_offload else None,
-            mixed_precision=mixed_precision_policy if not fsdp_config.pure_bf16 else None,
-            sharding_strategy=fsdp_config.sharding_strategy,
+            cpu_offload=CPUOffload(offload_params=True) if train_config.fsdp_cpu_offload else None,
+            mixed_precision=mixed_precision_policy if not train_config.use_bf16 else None,
+            sharding_strategy=train_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
             sync_module_states=train_config.low_cpu_fsdp,
@@ -189,7 +189,7 @@ def main(**kwargs) -> None:
             if train_config.low_cpu_fsdp and rank != 0
             else None,
         )
-        if fsdp_config.fsdp_activation_checkpointing and train_config.model_name:
+        if train_config.fsdp_activation_checkpointing and train_config.model_name:
             apply_fsdp_checkpointing(model=model, model_name=train_config.model_name)
     elif not train_config.quantization and not train_config.enable_fsdp:
         model.to("cuda")  # type: ignore
@@ -284,7 +284,7 @@ def main(**kwargs) -> None:
         )
 
     # Initialize the optimizer and learning rate scheduler
-    if fsdp_config.pure_bf16 and fsdp_config.optimizer == "anyprecision":
+    if train_config.use_bf16 and train_config.optimizer == "anyprecision":
         optimizer = AnyPrecisionAdamW(
             model.parameters(),  # type: ignore
             lr=train_config.lr,
@@ -343,7 +343,6 @@ def main(**kwargs) -> None:
         lr_scheduler=scheduler,
         gradient_accumulation_steps=train_config.gradient_accumulation_steps,
         train_config=train_config,
-        fsdp_config=fsdp_config if train_config.enable_fsdp else None,
         local_rank=get_local_rank() if train_config.enable_fsdp else None,
         rank=get_rank() if train_config.enable_fsdp else None,
     )

@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=3:00:00:00
+#$ -l h_rt=4:12:00:00
 #$ -j y
 #$ -o outputs/mamba-130m/
 #$ -cwd
@@ -94,7 +94,7 @@ mpirun -np $NUM_GPUS \
   --low_cpu_fsdp \
   --mixed_precision \
   --fsdp_cpu_offload \
-  --pure_bf16 \
+  --use_bf16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
