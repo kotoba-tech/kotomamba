@@ -86,6 +86,7 @@ def main(**kwargs) -> None:
     if train_config.use_mpi:
         set_mpi_env()
 
+    rank: int = 0
     if train_config.enable_fsdp:
         rank = int(os.environ["RANK"])
         world_size = int(os.environ["WORLD_SIZE"])
@@ -232,23 +233,22 @@ def main(**kwargs) -> None:
     if is_rank_0():
         print(f"dataset_train: {dataset_length}")  # type: ignore
 
-    train_sampler = None
     val_sampler = None
-    if train_config.enable_fsdp:
-        train_sampler = CustomDistributedSampler(
-            dataset_train,
+
+    train_sampler = CustomDistributedSampler(
+        dataset_train,
+        rank=torch_distributed.get_rank(),
+        num_replicas=torch_distributed.get_world_size(),
+        shuffle=True,
+        seed=train_config.seed,
+    )
+    if train_config.run_validation:
+        val_sampler = DistributedSampler(
+            dataset_val,  # type: ignore
             rank=torch_distributed.get_rank(),
             num_replicas=torch_distributed.get_world_size(),
-            shuffle=True,
             seed=train_config.seed,
         )
-        if train_config.run_validation:
-            val_sampler = DistributedSampler(
-                dataset_val,  # type: ignore
-                rank=torch_distributed.get_rank(),
-                num_replicas=torch_distributed.get_world_size(),
-                seed=train_config.seed,
-            )
 
     if train_config.load_checkpoint_path:
         load_sampler_state_dict(train_sampler, train_config.load_checkpoint_path)

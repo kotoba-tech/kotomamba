@@ -26,7 +26,8 @@ from llama_recipes.utils.checkpoint import save_checkpoint, get_latest_iteration
 from typing import Optional, Type, Any
 import wandb
 
-from llama_recipes.utils.sequence_length_warmup import SequenceLengthWarmupDistributedSampler
+from transformers.tokenization_utils import PreTrainedTokenizer
+from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
 
 
 def set_tokenizer_params(tokenizer: LlamaTokenizer):
@@ -39,19 +40,40 @@ def byte2mb(x):
     return int(x / 2**20)
 
 
+def get_next_step(
+    checkpoint_load_flag: bool,
+    last_iteration: int,
+    total_iterations: int,
+    gradient_accumulation_steps: int,
+) -> tuple[int, bool]:
+    """
+    if loading checkpoint, next step is checkpoint step.
+    if not, next step is 0.
+    """
+    if checkpoint_load_flag:
+        next_step: int = (
+            last_iteration % total_iterations
+        ) * gradient_accumulation_steps if last_iteration != 0 else 0
+        assert next_step < total_iterations * gradient_accumulation_steps, "next_step is out of range"
+        checkpoint_load_flag = False
+    else:
+        next_step: int = 0
+    return next_step, checkpoint_load_flag
+
+
 def train(
     model,
     train_dataloader: DataLoader,
     eval_dataloader: Optional[DataLoader],
-    sampler: SequenceLengthWarmupDistributedSampler | DistributedSampler,
-    tokenizer,
+    sampler: DistributedSampler,
+    tokenizer: PreTrainedTokenizer | _SentencePieceTokenizer,
     optimizer: torch.optim.AdamW,
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
     gradient_accumulation_steps: int,
     train_config: Type[train_config],
     local_rank: Optional[int] = None,
     rank: Optional[int] = None,
-):
+) -> dict[str, Any]:
     """
     Trains the model on the given dataloader
 
@@ -99,12 +121,13 @@ def train(
 
     last_epoch: int = 0
     last_iteration: int = 0
-    total_length: int = len(train_dataloader) // gradient_accumulation_steps
+    total_iterations: int = len(train_dataloader) // gradient_accumulation_steps
+    checkpoint_load_flag: bool = False
 
     # load checkpoint(model, optimizer, scheduler, sampler)
     if train_config.load_checkpoint_path != "":
         last_iteration = get_latest_iteration(train_config.load_checkpoint_path)
-        last_epoch = last_iteration // total_length
+        last_epoch = last_iteration // total_iterations
 
     wandb_iteration: int = 0
     if last_epoch == train_config.num_epochs:
@@ -115,6 +138,7 @@ def train(
     for epoch in range(last_epoch, train_config.num_epochs):
         epoch_start_time = time.perf_counter()
         iteration_start_time = time.perf_counter()
+        sampler.set_epoch(epoch)
 
         with MemoryTrace() as memtrace:  # track the memory usage
             model.train()
@@ -122,23 +146,26 @@ def train(
             pbar = tqdm(
                 colour="blue",
                 desc=f"Training Epoch: {epoch}",
-                total=total_length,
+                total=total_iterations,
                 disable=(rank != 0),
             )
 
             accumulation_loss: float = 0.0
             # checkpointをloadした場合は、次のステップから始める
-            next_step: int = (
-                last_iteration % total_length
-            ) * gradient_accumulation_steps if last_iteration != 0 else 0
+            next_step, checkpoint_load_flag = get_next_step(
+                checkpoint_load_flag=checkpoint_load_flag,
+                last_iteration=last_iteration,
+                total_iterations=total_iterations,
+                gradient_accumulation_steps=gradient_accumulation_steps,
+            )
 
-            train_dataloader = iter(train_dataloader)  # type: ignore
+            train_dataloader_iter = iter(train_dataloader)  # type: ignore
             for _ in range(next_step):
-                next(train_dataloader)  # type: ignore
+                next(train_dataloader_iter)  # type: ignore
 
-            for step, batch in enumerate(train_dataloader, start=next_step):
+            for step, batch in enumerate(train_dataloader_iter, start=next_step):
                 model.train()
-                wandb_iteration = epoch * total_length + step // gradient_accumulation_steps
+                wandb_iteration = epoch * total_iterations + step // gradient_accumulation_steps
 
                 for key in batch.keys():
                     if train_config.enable_fsdp:
@@ -235,7 +262,7 @@ def train(
         if torch.cuda.device_count() > 1 and train_config.enable_fsdp:
             total_loss = torch.tensor(total_loss).to(local_rank)  # type: ignore
             torch_distributed.all_reduce(total_loss, op=torch_distributed.ReduceOp.SUM)
-        train_epoch_loss: float = total_loss / len(train_dataloader)
+        train_epoch_loss: float = total_loss / len(train_dataloader) * gradient_accumulation_steps
         if train_config.enable_fsdp:
             train_epoch_loss: float = train_epoch_loss / world_size
         train_perplexity: torch.Tensor = torch.exp(train_epoch_loss)  # type: ignore
@@ -323,7 +350,7 @@ def train(
 
     # saving the training params including fsdp setting for reference.
     if train_config.enable_fsdp and not train_config.use_peft:
-        save_train_params(train_config, rank)
+        save_train_params(train_config, rank)  # type: ignore
 
     return results
 

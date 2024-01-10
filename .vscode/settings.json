@@ -17,6 +17,7 @@
     "numel",
     "pbar",
     "peft",
+    "randperm",
     "safetensors",
     "silu",
     "tflops"

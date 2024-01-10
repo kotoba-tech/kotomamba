@@ -50,14 +50,14 @@ class SequenceLengthWarmupDistributedSampler(DistributedSampler):
         super().__init__(dataset, num_replicas, rank, shuffle, seed=seed)
         self.max_sequence_length: int = max_sequence_length
         self.warmup_iterations: int = warmup_iterations
-        self.current_iteration = 0
+        self.current_epoch = 0
         self.start_iteration: int = start_iteration
         self.generator = torch.Generator()
         self.generator.manual_seed(self.seed)
         self.dataset_length: int = dataset_length
 
     def set_iteration(self, iteration: int) -> None:
-        self.current_iteration: int = iteration
+        self.current_epoch: int = iteration
 
     def state_dict(self) -> dict[str, Any]:
         return {
@@ -76,16 +76,16 @@ class SequenceLengthWarmupDistributedSampler(DistributedSampler):
         self.generator.set_state(state_dict["generator"])
 
     def __iter__(self) -> Iterator[int]:
-        print(f"Sampler __iter__() is called. iter={self.current_iteration}", flush=True)
+        print(f"Sampler __iter__() is called. iter={self.current_epoch}", flush=True)
         # シーケンスの長さを計算
         sequence_length: int = 64 + int(
-            (self.max_sequence_length - 64) * min(1.0, self.current_iteration / self.warmup_iterations)
+            (self.max_sequence_length - 64) * min(1.0, self.current_epoch / self.warmup_iterations)
         )
         # sequence lengthをdatasetにセット
         self.dataset.set_sequence_length(sequence_length)  # type: ignore
 
         if self.shuffle:
-            self.generator.manual_seed(self.seed + self.current_iteration)
+            self.generator.manual_seed(self.seed + self.current_epoch)
             indices = torch.randperm(self.dataset_length, generator=self.generator).tolist()  # type: ignore
         else:
             indices = list(range(self.dataset_length))  # type: ignore
@@ -98,23 +98,23 @@ class CustomDistributedSampler(DistributedSampler):
         super().__init__(*args, **kwargs)
         self.generator = torch.Generator()
         self.generator.manual_seed(self.seed)  # seed is defined in the parent class
-        self.current_iteration = 0
+        self.current_epoch = 0
 
-    def set_iteration(self, iteration: int) -> None:
-        self.current_iteration: int = iteration
+    def set_epoch(self, epoch: int) -> None:
+        self.current_epoch: int = epoch
 
     def state_dict(self) -> dict[str, Any]:
-        return {"current_iteration": self.current_iteration, "generator_state": self.generator.get_state()}
+        return {"current_epoch": self.current_epoch, "generator_state": self.generator.get_state()}
 
     def load_state_dict(self, state_dict):
-        self.current_iteration = state_dict["current_iteration"]
+        self.current_epoch = state_dict["current_epoch"]
         self.generator.set_state(state_dict["generator_state"])
 
     def __iter__(self):
         # Set the seed for shuffling based on the current iteration and generator state
         g = torch.Generator()
         g.set_state(self.generator.get_state())
-        g.manual_seed(self.current_iteration)
+        g.manual_seed(self.current_epoch)
 
         # dataset
         dataset_length: int = len(self.dataset)  # type: ignore
