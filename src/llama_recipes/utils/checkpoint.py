@@ -66,6 +66,29 @@ def save_sampler_state_dict(sampler: torch.utils.data.distributed.DistributedSam
         print(f"Saved sampler indices to {path}")
 
 
+def save_rng_state(path: str) -> None:
+    # PyTorch
+    torch_cpu_rng_state = torch.get_rng_state()
+    torch_gpu_rng_state = torch.cuda.get_rng_state()
+    # Numpy
+    import numpy
+    np_rng_state = numpy.random.get_state()
+    # random
+    import random
+    py_rng_state = random.getstate()
+
+    # save
+    if torch_distributed.get_rank() == 0:
+        print(f"Saving RNG states to {path}")
+        torch.save({
+            'torch_cpu_rng_state': torch_cpu_rng_state,
+            'torch_gpu_rng_state': torch_gpu_rng_state,
+            'np_rng_state': np_rng_state,
+            'py_rng_state': py_rng_state,
+        }, path)
+        print(f"Saved RNG states to {path}")
+
+
 def save_checkpoint(
     model: FSDP,
     optimizer: torch.optim.Optimizer,
@@ -100,6 +123,9 @@ def save_checkpoint(
     save_sampler_state_dict(
         sampler=sampler,
         path=f"{checkpoint_path}/sampler.pt",
+    )
+    save_rng_state(
+        path=f"{checkpoint_path}/rng.pt",
     )
 
     torch_distributed.barrier()
@@ -179,6 +205,26 @@ def load_sampler_state_dict(sampler: torch.utils.data.distributed.DistributedSam
     del state_dict
 
 
+def load_rng_state_dict(path: str) -> None:
+    import numpy
+    import random
+
+    latest_iteration: int = get_latest_iteration(path)
+    if latest_iteration == 0:
+        return
+
+    latest_checkpoint_path: str = get_checkpoint_name(
+        path, latest_iteration
+    )
+    rng_states = torch.load(f"{latest_checkpoint_path}/rng.pt", map_location="cpu")
+    torch.set_rng_state(rng_states['torch_cpu_rng_state'])
+    torch.cuda.set_rng_state(rng_states['torch_gpu_rng_state'])
+    numpy.random.set_state(rng_states['np_rng_state'])
+    random.setstate(rng_states['py_rng_state'])
+
+    del rng_states
+
+
 def read_latest_value(file_path: str) -> int:
     try:
         with open(file_path, "r") as file:
@@ -187,10 +233,10 @@ def read_latest_value(file_path: str) -> int:
     except FileNotFoundError:
         if torch_distributed.get_rank() == 0:
             print(f"File not found: {file_path}")
-        raise
+        raise FileNotFoundError
     except ValueError:
         print(f"Unable to convert file content to integer: {file_path}")
-        raise
+        raise ValueError
 
 
 def get_latest_iteration(path: str) -> int:

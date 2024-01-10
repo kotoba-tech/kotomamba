@@ -64,6 +64,7 @@ from llama_recipes.utils.checkpoint import (
     load_optimizer_state_dict,
     load_scheduler_state_dict,
     load_sampler_state_dict,
+    load_rng_state_dict,
 )
 
 
@@ -113,6 +114,11 @@ def main(**kwargs) -> None:
         torch.cuda.set_device(get_local_rank())  # type: ignore
         clear_gpu_cache(get_local_rank())  # type: ignore
         setup_environ_flags(get_rank())  # type: ignore
+
+    # random seed
+    if train_config.load_checkpoint_path and not train_config.no_load_rng:
+        load_rng_state_dict(train_config.load_checkpoint_path)
+        torch_distributed.barrier()
 
     # Load the pre-trained model and setup its configuration
     use_cache = False if train_config.enable_fsdp else None
