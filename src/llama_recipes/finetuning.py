@@ -150,6 +150,8 @@ def main(**kwargs) -> None:
     # Convert the model to bfloat16 if fsdp and use_bf16 is enabled
     if train_config.enable_fsdp and train_config.use_bf16:
         model.to(torch.bfloat16)  # type: ignore
+    if train_config.enable_fsdp and train_config.use_fp16:
+        model.to(torch.float16)  # type: ignore
 
     tokenizer = get_tokenizer(train_config)  # type: ignore
 
