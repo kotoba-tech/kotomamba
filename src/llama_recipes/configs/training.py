@@ -50,6 +50,7 @@ class train_config:
 
     use_fp16: bool = False
     use_bf16: bool = False
+    use_fp32: bool = False
     mixed_precision: bool = False
 
     dataset: str = ""
