@@ -307,7 +307,7 @@ def get_model(
 
         model = MambaLMHeadModel.from_pretrained(
             train_config.model_name,
-            dtype=torch.float16,
+            dtype=torch.bfloat16 if train_config.use_bf16 else torch.float16,
             from_scratch=train_config.from_scratch,
             vocab_size=tokenizer.vocab_size,
         )
