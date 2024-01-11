@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=10:00:00
+#$ -l h_rt=00:30:00
 #$ -j y
 #$ -o outputs/mamba-2.8b/
 #$ -cwd
@@ -47,7 +47,7 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=4
+BATCH_SIZE=8
 GLOBAL_BATCH_SIZE=512
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
@@ -69,17 +69,17 @@ SEED=42
 
 # dataset
 NUM_WORKERS_DATALOADER=2
-DATASET_DIR=/groups/gaf51275/llama/datasets/mamba_ja_en
+DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-2.8b/pile-okazaki-cc
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/2node
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-2.8b
+MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b
 
 # huggingface cache
-export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
+export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
 
 # ldconfig
 alias ldconfig=/usr/sbin/ldconfig
@@ -123,4 +123,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "ja-en-mamba-2.8b"
+  --wandb_name "2.8b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
