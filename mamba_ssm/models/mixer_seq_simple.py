@@ -310,7 +310,8 @@ class MambaLMHeadModel(GenerationMixin, PreTrainedModel):
         model = cls(config=config, device=device, dtype=dtype, **kwargs)
 
         if from_scratch:
-            print("from_scratch argument is set. start from scratch training")
+            if torch_distributed.get_rank() == 0:
+                print("\nfrom_scratch argument is set. start from scratch training\n", flush=True)
             return model
 
         model.load_state_dict(
