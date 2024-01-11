@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_F=64
-#$ -l h_rt=0:00:30:00
+#$ -l rt_F=2
+#$ -l h_rt=00:30:00
 #$ -j y
-#$ -o outputs/v-node/mamba-1.4b/
+#$ -o outputs/v-node/mamba-130m/
 #$ -cwd
 
 # module load
@@ -47,8 +47,8 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=2
-GLOBAL_BATCH_SIZE=512
+BATCH_SIZE=4
+GLOBAL_BATCH_SIZE=256
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -57,7 +57,7 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=1e-3
+LR=1.0e-3
 LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
@@ -72,11 +72,11 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-1.4b/v-node/pile-okazaki-cc
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-130m/v-node/pile-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-1.4b
+MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-130m
 
 # ldconfig
 alias ldconfig=/usr/sbin/ldconfig
@@ -112,7 +112,7 @@ mpirun -np $NUM_GPUS \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 1000 \
+  --save_interval_iteration 5000 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
@@ -120,4 +120,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "1.4b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
+  --wandb_name "130m-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
