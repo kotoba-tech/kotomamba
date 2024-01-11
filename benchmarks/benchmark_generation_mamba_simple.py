@@ -2,7 +2,6 @@
 
 import argparse
 import time
-import json
 
 import torch
 import torch.nn.functional as F
@@ -31,13 +30,15 @@ device = "cuda"
 dtype = torch.float16
 
 print(f"Loading model {args.model_name}")
-is_mamba = args.model_name.startswith("state-spaces/mamba-")
+is_mamba = "mamba" in args.model_name
+
 if is_mamba:
     tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
     model = MambaLMHeadModel.from_pretrained(args.model_name, device=device, dtype=dtype)
 else:
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map={"": device}, torch_dtype=dtype)
+
 model.eval()
 print(f"Number of parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 

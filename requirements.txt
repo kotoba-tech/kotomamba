@@ -1,0 +1,16 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==2.1.2+cu118
+
+# huggingface
+transformers
+datasets
+accelerate
+
+# logging
+wandb
+
+# for FSDP
+deepspeed
+peft
+fire
+optimum
