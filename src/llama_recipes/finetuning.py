@@ -181,7 +181,7 @@ def main(**kwargs) -> None:
             model,  # type: ignore
             auto_wrap_policy=my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
             cpu_offload=CPUOffload(offload_params=True) if train_config.fsdp_cpu_offload else None,
-            mixed_precision=mixed_precision_policy if not train_config.use_bf16 else None,
+            mixed_precision=mixed_precision_policy,
             sharding_strategy=train_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,
