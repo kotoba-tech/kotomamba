@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=2:23:30:00
+#$ -l h_rt=2:21:30:00
 #$ -j y
-#$ -o outputs/mamba-130m/2node/
+#$ -o outputs/a-node/mamba-130m/
 #$ -cwd
 
 # module load
@@ -69,17 +69,17 @@ SEED=42
 
 # dataset
 NUM_WORKERS_DATALOADER=2
-DATASET_DIR=/groups/gaf51275/llama/datasets/mamba_ja_en
+DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m/pile-okazaki-cc
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-130m
+MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-130m
 
 # huggingface cache
-export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
+export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
 
 # ldconfig
 alias ldconfig=/usr/sbin/ldconfig
@@ -124,4 +124,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "ja-en-mamba-130m"
+  --wandb_name "130m-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
