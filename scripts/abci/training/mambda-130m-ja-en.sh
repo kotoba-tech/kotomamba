@@ -1,8 +1,8 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=4:12:00:00
+#$ -l h_rt=2:23:30:00
 #$ -j y
-#$ -o outputs/mamba-130m/
+#$ -o outputs/mamba-130m/2node/
 #$ -cwd
 
 # module load
@@ -72,7 +72,7 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/groups/gaf51275/llama/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile-okazaki-cc
+CHECKPOINTS_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m/pile-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -80,6 +80,9 @@ MODEL_DIR=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-130m
 
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
+
+# ldconfig
+alias ldconfig=/usr/sbin/ldconfig
 
 # run
 mpirun -np $NUM_GPUS \
@@ -113,7 +116,7 @@ mpirun -np $NUM_GPUS \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 500 \
+  --save_interval_iteration 5000 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \

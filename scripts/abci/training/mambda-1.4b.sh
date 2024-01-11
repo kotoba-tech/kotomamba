@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=6:30:00
+#$ -l h_rt=2:23:30:00
 #$ -j y
 #$ -o outputs/mamba-1.4b/
 #$ -cwd
