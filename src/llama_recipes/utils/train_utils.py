@@ -494,7 +494,11 @@ def print_model_size(model, config, rank: int = 0) -> None:
 
 
 def get_policies(cfg: type[train_config], rank: int, model_name: str):
-    """Get the policies for mixed precision and fsdp wrapping"""
+    """
+    Get the policies for mixed precision and fsdp wrapping
+
+    reference: https://pytorch.org/tutorials/intermediate/FSDP_adavnced_tutorial.html
+    """
 
     verify_bfloat_support: bool = (
         torch.version.cuda  # type: ignore
