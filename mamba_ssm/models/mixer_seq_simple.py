@@ -11,6 +11,7 @@ from collections import namedtuple
 from typing import Union
 import torch
 import torch.nn as nn
+import torch.distributed as torch_distributed
 from torch.nn import CrossEntropyLoss
 from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutput

@@ -514,15 +514,15 @@ def get_policies(cfg: type[train_config], rank: int, model_name: str):
         if bf16_ready and not cfg.use_fp16:
             mixed_precision_policy = bfSixteen_mixed
             if rank == 0:
-                print("\nBFloat16 enabled for mixed precision - using bfSixteen policy\n")
+                print("\nBFloat16 enabled for mixed precision - using bfSixteen policy\n", flush=True)
         elif cfg.use_fp16:
             mixed_precision_policy = fpSixteen
             if rank == 0:
-                print("\nFP16 enabled\n")
+                print("\nFP16 enabled\n", flush=True)
         elif cfg.use_fp32:
             mixed_precision_policy = fp32_policy
             if rank == 0:
-                print("\nFP32 enabled\n")
+                print("\nFP32 enabled\n", flush=True)
         else:
             print("bFloat16 support not present. Using FP32, and not mixed precision")
     wrapping_policy = get_decoder_layer_wrapper(model_name=model_name)
