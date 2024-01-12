@@ -22,9 +22,9 @@ def get_model(
     Returns:
         LlamaForCausalLM | MistralForCausalLM: PyTorch model
     """
-    model_d_type = torch.float32
+    model_d_type: torch.dtype = torch.float32
     if train_config.use_bf16:
-        model_d_type = train_config.use_bf16
+        model_d_type = torch.bfloat16
     elif train_config.use_fp16:
         model_d_type = torch.float16
 
