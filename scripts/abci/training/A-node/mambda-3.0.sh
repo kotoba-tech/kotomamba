@@ -96,6 +96,7 @@ mpirun -np $NUM_GPUS \
   --enable_fsdp \
   --low_cpu_fsdp \
   --use_bf16 \
+  --mixed_precision \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
