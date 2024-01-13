@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=8
-#$ -l h_rt=4:00:00:00
+#$ -l h_rt=3:00:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-3.0b/
 #$ -cwd
@@ -95,7 +95,6 @@ mpirun -np $NUM_GPUS \
   python pretrain.py \
   --enable_fsdp \
   --low_cpu_fsdp \
-  --mixed_precision \
   --use_bf16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
