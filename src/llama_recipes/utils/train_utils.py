@@ -18,7 +18,7 @@ from torch.nn.utils import clip_grad_norm_  # type: ignore
 from tqdm import tqdm
 from transformers import LlamaTokenizer
 from llama_recipes.configs.training import train_config
-from llama_recipes.policies import fpSixteen, bfSixteen_mixed, fp32_policy, get_decoder_layer_wrapper
+from llama_recipes.policies import fpSixteen, bfSixteen, bfSixteen_mixed, fp32_policy, get_decoder_layer_wrapper
 from llama_recipes.utils.memory_utils import MemoryTrace
 from llama_recipes.utils.wandb_utils import log_model_info, log_wandb
 from llama_recipes.utils.checkpoint import save_checkpoint, get_latest_iteration
@@ -515,8 +515,12 @@ def get_policies(cfg: type[train_config], rank: int, model_name: str):
     if cfg.mixed_precision:
         bf16_ready = verify_bfloat_support
 
-        if bf16_ready and not cfg.use_fp16:
+        if bf16_ready and not cfg.use_fp16 and cfg.param_dtype == torch.float32:
             mixed_precision_policy = bfSixteen_mixed
+            if rank == 0:
+                print("\nBFloat16 enabled for mixed precision - using bfSixteen_mixed policy\n", flush=True)
+        elif bf16_ready and not cfg.use_fp16:
+            mixed_precision_policy = bfSixteen
             if rank == 0:
                 print("\nBFloat16 enabled for mixed precision - using bfSixteen policy\n", flush=True)
         elif cfg.use_fp16:
