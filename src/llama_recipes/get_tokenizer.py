@@ -16,12 +16,13 @@ from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
 def get_tokenizer(train_config: Type[train_config]) -> (PreTrainedTokenizer | LlamaTokenizer | _SentencePieceTokenizer):
     if "Llama" in train_config.tokenizer_name:
         tokenizer = LlamaTokenizer.from_pretrained(train_config.tokenizer_name)
-        tokenizer.add_special_tokens({"pad_token": "<PAD>"})
+        tokenizer.pad_token_id = tokenizer.eos_token_id
 
         return tokenizer  # type: ignore
     elif "Mistral" in train_config.tokenizer_name:
         tokenizer = AutoTokenizer.from_pretrained(train_config.tokenizer_name)
-        tokenizer.add_special_tokens({"pad_token": "<PAD>"})
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token_id = tokenizer.eos_token_id
 
         return tokenizer  # type: ignore
     elif "calm2-7b" in train_config.tokenizer_name:
