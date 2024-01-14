@@ -17,7 +17,7 @@ class MemoryTrace:
     def __enter__(self):
         gc.collect()
         torch.cuda.empty_cache()
-        torch.cuda.reset_max_memory_allocated()  # reset the peak gauge to zero
+        torch.cuda.reset_peak_memory_stats()  # reset the peak gauge to zero
         self.begin = byte2gb(torch.cuda.memory_allocated())
         self.process = psutil.Process()
         self.cpu_begin = byte2gb(self.cpu_mem_used())

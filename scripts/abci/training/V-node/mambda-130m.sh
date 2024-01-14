@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_AF=2
+#$ -l rt_F=2
 #$ -l h_rt=00:30:00
 #$ -j y
-#$ -o outputs/a-node/mamba-2.8b/
+#$ -o outputs/v-node/mamba-130m/
 #$ -cwd
 
 # module load
@@ -47,8 +47,8 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=8
-GLOBAL_BATCH_SIZE=512
+BATCH_SIZE=4
+GLOBAL_BATCH_SIZE=256
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -57,7 +57,7 @@ if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
 fi
 
 # optimizer
-LR=8e-4
+LR=1.0e-3
 LR_MIN=1e-5
 LR_DECAY=0.80
 LR_WARMUP=0.05
@@ -72,14 +72,11 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/2node
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-130m/v-node/pile-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b
-
-# huggingface cache
-export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
+MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-130m
 
 # ldconfig
 alias ldconfig=/usr/sbin/ldconfig
@@ -96,7 +93,7 @@ mpirun -np $NUM_GPUS \
   --enable_fsdp \
   --low_cpu_fsdp \
   --mixed_precision \
-  --use_bf16 \
+  --use_fp16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
@@ -115,7 +112,7 @@ mpirun -np $NUM_GPUS \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 500 \
+  --save_interval_iteration 5000 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
@@ -123,4 +120,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "2.8b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
+  --wandb_name "130m-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"

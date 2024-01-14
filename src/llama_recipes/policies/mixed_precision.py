@@ -3,7 +3,7 @@
 
 import torch
 
-from torch.distributed.fsdp import (
+from torch.distributed.fsdp.api import (
     MixedPrecision,
 )
 

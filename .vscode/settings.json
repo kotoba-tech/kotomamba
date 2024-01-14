@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "anyprecision",
+    "bettertransformer",
     "detokenize",
     "einops",
     "Eleuther",
@@ -20,6 +21,7 @@
     "randperm",
     "safetensors",
     "silu",
-    "tflops"
+    "tflops",
+    "Xformer"
   ]
 }

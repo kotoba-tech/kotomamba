@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_AF=2
-#$ -l h_rt=00:30:00
+#$ -l rt_AF=8
+#$ -l h_rt=3:00:00:00
 #$ -j y
-#$ -o outputs/a-node/mamba-2.8b/
+#$ -o outputs/a-node/mamba-3.0b/
 #$ -cwd
 
 # module load
@@ -72,11 +72,11 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/2node
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-3.0b/a-node/
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
-MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b
+MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-3.0b
 
 # huggingface cache
 export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
@@ -95,8 +95,8 @@ mpirun -np $NUM_GPUS \
   python pretrain.py \
   --enable_fsdp \
   --low_cpu_fsdp \
-  --mixed_precision \
   --use_bf16 \
+  --mixed_precision \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
@@ -123,4 +123,4 @@ mpirun -np $NUM_GPUS \
   --use_mpi \
   --wandb-entity "fine-tuning-llm" \
   --wandb-project "mamba" \
-  --wandb_name "2.8b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
+  --wandb_name "3.0b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"

@@ -1,8 +1,8 @@
 #!/bin/bash
-#$ -l rt_AF=2
+#$ -l rt_F=64
 #$ -l h_rt=00:30:00
 #$ -j y
-#$ -o outputs/a-node/mamba-2.8b/
+#$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
 
 # module load
@@ -47,7 +47,7 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=8
+BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=512
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
@@ -72,7 +72,7 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/2node
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/v-node/pike-okazaki-cc
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -96,7 +96,7 @@ mpirun -np $NUM_GPUS \
   --enable_fsdp \
   --low_cpu_fsdp \
   --mixed_precision \
-  --use_bf16 \
+  --use_fp16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \

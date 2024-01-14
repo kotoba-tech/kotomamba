@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_F=128
+#$ -l rt_F=64
 #$ -l h_rt=0:00:30:00
 #$ -j y
 #$ -o outputs/v-node/mamba-1.4b/
@@ -47,7 +47,7 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=1
+BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=512
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
@@ -93,7 +93,7 @@ mpirun -np $NUM_GPUS \
   --enable_fsdp \
   --low_cpu_fsdp \
   --mixed_precision \
-  --use_bf16 \
+  --use_fp16 \
   --num_epochs $NUM_EPOCHS \
   --model_name $MODEL_DIR \
   --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \

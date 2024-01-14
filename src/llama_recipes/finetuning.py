@@ -150,6 +150,8 @@ def main(**kwargs) -> None:
     # Convert the model to bfloat16 if fsdp and use_bf16 is enabled
     if train_config.enable_fsdp and train_config.use_bf16:
         model.to(torch.bfloat16)  # type: ignore
+    if train_config.enable_fsdp and train_config.use_fp16:
+        model.to(torch.float16)  # type: ignore
 
     tokenizer = get_tokenizer(train_config)  # type: ignore
 
@@ -181,7 +183,7 @@ def main(**kwargs) -> None:
             model,  # type: ignore
             auto_wrap_policy=my_auto_wrapping_policy if train_config.use_peft else wrapping_policy,
             cpu_offload=CPUOffload(offload_params=True) if train_config.fsdp_cpu_offload else None,
-            mixed_precision=mixed_precision_policy if not train_config.use_bf16 else None,
+            mixed_precision=mixed_precision_policy,
             sharding_strategy=train_config.sharding_strategy,
             device_id=torch.cuda.current_device(),
             limit_all_gathers=True,

@@ -6,6 +6,7 @@ from typing import Optional
 
 from torch.distributed.fsdp import ShardingStrategy  # type: ignore
 from torch.distributed.fsdp.fully_sharded_data_parallel import StateDictType  # type: ignore
+import torch
 
 
 @dataclass
@@ -49,8 +50,10 @@ class train_config:
     seed: int = 42
 
     use_fp16: bool = False
-    use_bf16: bool = True
-    mixed_precision: bool = True
+    use_bf16: bool = False
+    use_fp32: bool = False
+    mixed_precision: bool = False
+    param_dtype: Optional[torch.dtype] = None
 
     dataset: str = ""
     num_workers_dataloader: int = 1
@@ -66,7 +69,7 @@ class train_config:
 
     one_gpu: bool = False
 
-    save_model: bool = True
+    save_model: bool = False
     save_checkpoint_path: str = ""
     save_optimizer: bool = False  # will be used if using FSDP
     load_checkpoint_path: str = ""

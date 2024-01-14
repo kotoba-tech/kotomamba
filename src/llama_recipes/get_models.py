@@ -22,6 +22,12 @@ def get_model(
     Returns:
         LlamaForCausalLM | MistralForCausalLM: PyTorch model
     """
+    model_d_type: torch.dtype = torch.float32
+    if train_config.use_bf16:
+        model_d_type = torch.bfloat16
+    elif train_config.use_fp16:
+        model_d_type = torch.float16
+
     if "Llama" in train_config.model_name:
         if train_config.enable_fsdp and train_config.low_cpu_fsdp:
             """
@@ -307,7 +313,7 @@ def get_model(
 
         model = MambaLMHeadModel.from_pretrained(
             train_config.model_name,
-            dtype=torch.float16,
+            dtype=model_d_type,
             from_scratch=train_config.from_scratch,
             vocab_size=tokenizer.vocab_size,
         )
