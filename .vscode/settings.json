@@ -7,6 +7,7 @@
     "Eleuther",
     "endoftext",
     "frombuffer",
+    "FSDP",
     "itemsize",
     "kotomamba",
     "memmap",
