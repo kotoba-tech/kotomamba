@@ -1,3 +1,22 @@
+# Kotomamba
+
+kotomamba is a fork of [state-spaces/mamba](https://github.com/state-spaces/mamba).
+
+kotomamba supports the following features:
+
+- PyTorch FSDP distributed training
+  - mixed precision training
+  - support V100, A100
+- convert to HF transformers checkpoint
+- continual pre-training Mamba model
+- instruction tuning Mamba model
+
+## Installation
+
+[install.md](install.md) describes how to install packages for training and inference with kotomamba.
+
+ **(following is the original README.md)**
+
 # Mamba
 
 ![Mamba](assets/selection.png "Selective State Space")
