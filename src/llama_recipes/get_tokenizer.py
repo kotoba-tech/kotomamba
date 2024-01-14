@@ -10,7 +10,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root_dir = f"{current_dir}/../../"
 
 sys.path.append(project_root_dir)
-from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
+from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer, _MambaTokenizer
 
 
 def get_tokenizer(train_config: Type[train_config]) -> (PreTrainedTokenizer | LlamaTokenizer | _SentencePieceTokenizer):
@@ -75,7 +75,7 @@ def get_tokenizer(train_config: Type[train_config]) -> (PreTrainedTokenizer | Ll
         return tokenizer  # type: ignore
 
     elif "EleutherAI/gpt-neox-20b" in train_config.tokenizer_name:
-        tokenizer = AutoTokenizer.from_pretrained(
+        tokenizer = _MambaTokenizer(
             train_config.tokenizer_name
         )
 
