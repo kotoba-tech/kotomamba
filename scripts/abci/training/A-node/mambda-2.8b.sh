@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=2
-#$ -l h_rt=00:30:00
+#$ -l rt_AF=8
+#$ -l h_rt=1:16:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-2.8b/
 #$ -cwd
@@ -72,7 +72,7 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/2node
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
@@ -115,12 +115,12 @@ mpirun -np $NUM_GPUS \
   --num_workers_dataloader $NUM_WORKERS_DATALOADER \
   --save_model \
   --save_optimizer \
-  --save_interval_iteration 500 \
+  --save_interval_iteration 2000 \
   --context-size 2048 \
   --save_checkpoint_path $CHECKPOINTS_PATH \
   --load_checkpoint_path $CHECKPOINTS_PATH \
   --from_scratch \
   --use_mpi \
-  --wandb-entity "fine-tuning-llm" \
-  --wandb-project "mamba" \
+  --wandb-entity "prj-jalm" \
+  --wandb-project "ABCI-mamba" \
   --wandb_name "2.8b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
