@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=8
-#$ -l h_rt=1:16:00:00
+#$ -l h_rt=1:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-2.8b/
 #$ -cwd
@@ -47,8 +47,8 @@ done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 NUM_EPOCHS=1
 
 # batch size
-BATCH_SIZE=8
-GLOBAL_BATCH_SIZE=512
+BATCH_SIZE=16
+GLOBAL_BATCH_SIZE=1024
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -72,7 +72,7 @@ NUM_WORKERS_DATALOADER=2
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
 
 # checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/
+CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/8node/
 mkdir -p $CHECKPOINTS_PATH
 
 # model dir
