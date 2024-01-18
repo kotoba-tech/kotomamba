@@ -17,25 +17,27 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=1300
-end=1300
-increment=200
+start=420000
+end=420000
+increment=100000
 
 for ((i = start; i <= end; i += increment)); do
   ITERATION=$i
   FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
-  CHECK_POINT_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-pile-hpyer-parameter/${FORMATTED_ITERATION}/model.pt
-  OUTPUT_PATH=/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-hf
+  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc/${FORMATTED_ITERATION}/model.pt
+  OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc/${FORMATTED_ITERATION}
+  TOKNENIZER_PATH=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model
 
   echo "convert ${CHECK_POINT_PATH} to ${OUTPUT_PATH}"
 
   mkdir -p $OUTPUT_PATH
 
-  BASE_MODEL_CHECKPOINT=/groups/gcd50698/fujii/work/mamba/hf_checkpoints/mamba-130m
+  BASE_MODEL_CHECKPOINT=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-130m
 
   python tools/convert_ckpt/convert_mamba.py \
     --model $BASE_MODEL_CHECKPOINT \
     --ckpt $CHECK_POINT_PATH \
-    --out $OUTPUT_PATH
+    --out $OUTPUT_PATH \
+    --tokenizer-path $TOKNENIZER_PATH
 done
