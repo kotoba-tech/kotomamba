@@ -4,15 +4,16 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
+import typing
 
 import numpy
 import torch
 
-from megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
-from megatron.core.datasets.indexed_dataset import MMapIndexedDataset
-from megatron.core.datasets.megatron_dataset import MegatronDataset
-from megatron.core.datasets.utils import Split, log_single_rank
+from megatron_lm.megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
+from megatron_lm.megatron.core.datasets.indexed_dataset import MMapIndexedDataset
+from megatron_lm.megatron.core.datasets.megatron_dataset import MegatronDataset
+from megatron_lm.megatron.core.datasets.utils import Split, log_single_rank
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +21,24 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GPTDatasetConfig(BlendedMegatronDatasetConfig):
     """Configuration object for Megatron Core GPT datasets
+
+    Attributes:
+        return_document_ids (bool): Whether to return the document ids when querying the dataset.
+
+        reset_position_ids (bool): Option to reset the position IDs in the dataset at an interval
+
+        reset_attention_mask (bool): Option to reset the attention mask from the dataset
+
+        eod_mask_loss (bool): Option to enable the EOD mask loss
+
+        eod_id (int): Has the identity of the end of document
     """
 
-    pass
+    return_document_ids: bool = False
+    reset_position_ids: bool = False
+    reset_attention_mask: bool = False
+    eod_mask_loss: bool = False
+    eod_id: int = 0
 
 
 class GPTDataset(MegatronDataset):
@@ -53,7 +69,7 @@ class GPTDataset(MegatronDataset):
 
     def _finalize(self) -> None:
         """Abstract method implementation
-        
+
         Load or build/cache the document, sample, and shuffle indices
         """
         assert isinstance(self.config, GPTDatasetConfig)
@@ -72,17 +88,32 @@ class GPTDataset(MegatronDataset):
         """
         return self.sample_index.shape[0] - 1
 
-    def __getitem__(self, idx: int) -> Dict[str, numpy.ndarray]:
+    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
         """Abstract method implementation
 
         Args:
             idx (int): The index into the dataset
 
         Returns:
-            Dict[str, numpy.ndarray]: The text ids wrapped in a dictionary
+            Dict[str, torch.Tensor]: The text ids wrapped in a dictionary
         """
         text, _ = self._query_document_sample_shuffle_indices(idx)
-        return {"text": text}
+
+        text = torch.from_numpy(text)
+
+        tokens = text.long()
+        labels = tokens.clone()
+
+        # HF Transformers automatically shift input_ids and labels, so don't shift manually.
+        # ref: Mistral https://github.com/huggingface/transformers/blob/main/src/transformers/models/mistral/modeling_mistral.py#L1171-L1174
+        # ref: https://discuss.huggingface.co/t/where-does-the-transformers-do-the-target-text-shifting-in-causal-lm/32408/4
+        # Also, if attention mask is all 1(= True), you don't have to pass attention mask.
+        # HF Transformers' attention mask is 1 D. so like this. [1, 1, 1, ...., 0, 0]
+        # 1 means token, 0 means pad_token.
+        return {
+            "input_ids": tokens,
+            "labels": labels,
+        }
 
     @staticmethod
     def is_multimodal() -> bool:
@@ -131,7 +162,7 @@ class GPTDataset(MegatronDataset):
             # Add the entire sample
             sample_parts.append(
                 self.indexed_dataset.get(
-                    self.document_index[doc_index_beg],
+                    self.document_index[doc_index_beg],  # type: ignore
                     offset=doc_index_beg_offset,
                     length=doc_index_end_offset - doc_index_beg_offset + 1,
                 )
@@ -159,7 +190,7 @@ class GPTDataset(MegatronDataset):
         self,
     ) -> Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]:
         """Build the document index, the sample index, and the shuffle index
-        
+
         The document index:
             -- 1-D
             -- An ordered array of document ids
@@ -181,10 +212,12 @@ class GPTDataset(MegatronDataset):
         path_to_cache = self.config.path_to_cache
         if path_to_cache is None:
             path_to_cache = os.path.join(
-                self.indexed_dataset.path_prefix, "cache", f"{type(self).__name__}_indices"
+                self.indexed_dataset.path_prefix,  # type: ignore
+                "cache",
+                f"{type(self).__name__}_indices"
             )
 
-        get_path_to = lambda suffix: os.path.join(
+        get_path_to = lambda suffix: os.path.join(  # noqa: E731
             path_to_cache, f"{self.unique_description_hash}-{type(self).__name__}-{suffix}"
         )
         path_to_description = get_path_to("description.txt")
@@ -280,7 +313,7 @@ class GPTDataset(MegatronDataset):
                 f"\tBuild and save the sample index to {os.path.basename(path_to_sample_index)}",
             )
             t_beg = time.time()
-            from megatron.core.datasets import helpers
+            from megatron_lm.megatron.core.datasets import helpers
 
             assert document_index.dtype == numpy.int32
             assert self.indexed_dataset.sequence_lengths.dtype == numpy.int32
@@ -304,7 +337,9 @@ class GPTDataset(MegatronDataset):
             t_beg = time.time()
             if separate_final_epoch:
                 shuffle_index = _build_shuffle_index(
-                    num_samples_sans_final_epoch, sample_index.shape[0] - 1, numpy_random_state
+                    num_samples_sans_final_epoch,  # type: ignore
+                    sample_index.shape[0] - 1,
+                    numpy_random_state
                 )
             else:
                 shuffle_index = _build_shuffle_index(
@@ -456,3 +491,76 @@ def _build_shuffle_index(
     numpy_random_state.shuffle(shuffle_idx_last)
 
     return numpy.concatenate((shuffle_idx_first, shuffle_idx_last))
+
+
+def _get_ltor_masks_and_position_ids(
+    data: torch.Tensor,
+    eod_token: int,
+    reset_position_ids: bool,
+    reset_attention_mask: bool,
+    eod_mask_loss: bool,
+):
+    """Build masks and position id for left to right model.
+
+    Args:
+        data (torch.Tensor): The data tenor that holds the tokens from the dataset
+
+        eod_token (int): ID of the token to that is considered the EOD
+
+        reset_position_ids (bool): Switch to reset the document position ID's
+
+        reset_attention_mask (bool): Switch to reset the attention mask
+
+        eod_mask_loss (bool): Switch to enable the EOD mask loss
+
+    Returns:
+        torch.Tensor : Attention mask needed to be used for Attention
+
+        torch.Tensor : The mask used for loss value during training
+
+        torch.Tensor : The position ID's of the token
+
+    """
+
+    # Extract batch size and sequence length.
+    seq_length = data.numel()
+
+    attention_mask = torch.tril(torch.ones((seq_length, seq_length), device=data.device)).unsqueeze(
+        0
+    )
+
+    # Loss mask.
+    loss_mask = torch.ones(seq_length, dtype=torch.float, device=data.device)
+    if eod_mask_loss:
+        loss_mask[data == eod_token] = 0.0
+
+    # Position ids.
+    position_ids = torch.arange(seq_length, dtype=torch.long, device=data.device)
+    # We need to clone as the ids will be modifed based on batch index.
+    if reset_position_ids:
+        position_ids = position_ids.clone()
+
+    if reset_position_ids or reset_attention_mask:
+
+        # Find indecies where EOD token is.
+        eod_index = position_ids[data[-1] == eod_token]
+        # Detach indecies from positions if going to modify positions.
+        if reset_position_ids:
+            eod_index = eod_index.clone()
+
+        # Loop through EOD indecies:
+        prev_index = 0
+        for j in range(eod_index.numel()):
+            i = eod_index[j]
+            # Mask attention loss.
+            if reset_attention_mask:
+                attention_mask[0, (i + 1) :, : (i + 1)] = 0
+            # Reset positions.
+            if reset_position_ids:
+                position_ids[(i + 1) :] -= i + 1 - prev_index
+                prev_index = i + 1
+
+    # Convert attention mask to binary:
+    attention_mask = attention_mask < 0.5
+
+    return attention_mask, loss_mask, position_ids
