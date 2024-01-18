@@ -1,70 +1,13 @@
-from llama_recipes.configs import train_config
 import torch
 import wandb
 import os
 import time
-from typing import Any
 import math
+from typing import Any
 
 
-def set_config(wandb_configs: dict) -> None:
-    # train_config
-    wandb_configs["model_name"] = train_config.model_name
-
-    wandb_configs["enable_fsdp"] = train_config.enable_fsdp
-    wandb_configs["low_cpu_fsdp"] = train_config.low_cpu_fsdp
-    wandb_configs["run_validation"] = train_config.run_validation
-
-    wandb_configs["batch_size"] = train_config.batch_size
-    wandb_configs["gradient_accumulation_steps"] = train_config.gradient_accumulation_steps
-
-    wandb_configs["num_epochs"] = train_config.num_epochs
-    wandb_configs["num_workers_dataloader"] = train_config.num_workers_dataloader
-
-    wandb_configs["optimizer"] = train_config.optimizer
-    wandb_configs["lr"] = train_config.lr
-    wandb_configs["lr_min"] = train_config.lr_min
-    wandb_configs["lr_decay"] = train_config.lr_decay
-    wandb_configs["lr_warmup"] = train_config.lr_warmup
-    wandb_configs["lr_decay_style"] = train_config.lr_decay_style
-    wandb_configs["use_sequence_length_schedule"] = train_config.use_sequence_length_schedule
-    wandb_configs["weight_decay"] = train_config.weight_decay
-    wandb_configs["gamma"] = train_config.gamma
-    wandb_configs["adamw_eps"] = train_config.adamw_eps
-    wandb_configs["adamw_betas"] = train_config.adamw_betas
-    wandb_configs["seed"] = train_config.seed
-
-    wandb_configs["use_bf16"] = train_config.use_bf16
-    wandb_configs["use_fp16"] = train_config.use_fp16
-    wandb_configs["mixed_precision"] = train_config.mixed_precision
-
-    wandb_configs["dataset"] = train_config.dataset
-
-    wandb_configs["peft_method"] = train_config.peft_method
-    wandb_configs["use_peft"] = train_config.use_peft
-    wandb_configs["freeze_layers"] = train_config.freeze_layers
-    wandb_configs["num_freeze_layers"] = train_config.num_freeze_layers
-    wandb_configs["quantization"] = train_config.quantization
-
-    wandb_configs["one_gpu"] = train_config.one_gpu
-
-    wandb_configs["save_model"] = train_config.save_model
-    wandb_configs["save_optimizer"] = train_config.save_optimizer
-
-    wandb_configs["use_fast_kernels"] = train_config.use_fast_kernels
-    wandb_configs["use_mpi"] = train_config.use_mpi
-    wandb_configs["val_iteration"] = train_config.val_iteration
-    wandb_configs["from_scratch"] = train_config.from_scratch
-
-    wandb_configs["sharding_strategy"] = train_config.sharding_strategy
-    wandb_configs["checkpoint_type"] = train_config.checkpoint_type
-    wandb_configs["fsdp_activation_checkpointing"] = train_config.fsdp_activation_checkpointing
-    wandb_configs["fsdp_cpu_offload"] = train_config.fsdp_cpu_offload
-
-
-def log_model_info(model: torch.nn.Module, model_name: str) -> None:
+def log_model_info(model: torch.nn.Module) -> None:
     model_config: dict[str, Any] = {}
-
     if "mamba" in model_name:
         model_config["d_model"] = model.config.d_model
         model_config["fused_add_norm"] = model.config.fused_add_norm
@@ -93,33 +36,30 @@ def log_model_info(model: torch.nn.Module, model_name: str) -> None:
 
 
 def log_wandb(
-    batch: dict[str, torch.Tensor],
+    real_batch_size: int,
+    real_seq_len: int,
     model: torch.nn.Module,
     accumulation_loss: float,
     optimizer: torch.optim.Optimizer,
-    epoch: int,
-    step: int,
+    iteration: int,
     gradient_accumulation_steps: int,
     world_size: int,
     iteration_start_time: float,
-    wandb_iteration: int,
 ) -> None:
     wandb_stats: dict[str, Any] = {}
 
     # training info
     wandb_stats["training/loss"] = accumulation_loss
     wandb_stats["training/perplexity"] = math.exp(accumulation_loss)
-
     # utils info
-    batch_size: int = batch["input_ids"].shape[0]
-    sequence_length: int = batch["input_ids"].shape[1]
+    batch_size: int = real_batch_size
+    sequence_length: int = real_seq_len
 
     wandb_stats["utils/batch_size"] = batch_size
     wandb_stats["utils/global_batch_size"] = batch_size * world_size * gradient_accumulation_steps
     wandb_stats["utils/seq_len"] = sequence_length
     wandb_stats["utils/gradient_accumulation_steps"] = gradient_accumulation_steps
-    wandb_stats["utils/epoch"] = epoch
-    wandb_stats["utils/step"] = step
+    wandb_stats["utils/iteration"] = iteration
 
     # optimizer info
     wandb_stats["optimizer/lr"] = optimizer.param_groups[0]["lr"]
@@ -188,37 +128,38 @@ def log_wandb(
     wandb_stats["stats/tokens_per_sec_per_gpu"] = tokens_per_sec / world_size
 
     checkpoint_activations_factor = 3
-    if train_config is not None and train_config.fsdp_activation_checkpointing:  # type ignore
-        checkpoint_activations_factor = 4
 
-    num_layers: int = model.config.n_layer
-    hidden_size: int = model.config.d_model
+    num_layers: int = model.config.num_hidden_layers
+    hidden_size: int = model.config.hidden_size
     vocab_size: int = model.config.vocab_size
-    intermediate_size = hidden_size * 3
-    activation_func: str = "silu"
+    activation_func: str = model.config.hidden_act
+    intermediate_size: int = model.config.intermediate_size
 
     activation_function_factor: int = 4  # GELU
     if activation_func == "silu":
         activation_function_factor = 4 + 2  # SWiGLU (upscaling + down scaling)
 
+    batch_size = batch_size * gradient_accumulation_steps
+    num_query_groups: int = model.config.num_attention_heads / model.config.num_key_value_heads
+
     # tflops calculation
-    # TODO: fix TFLOPS calculation
-    flops_per_iteration: float = (
-        (8 + activation_function_factor * (intermediate_size / hidden_size))
-        * checkpoint_activations_factor
-        * batch_size
-        * sequence_length
-        * gradient_accumulation_steps
-        * num_layers
-        * (hidden_size**2)
-    ) * (1.0 + (sequence_length / (6.0 * hidden_size)) + (vocab_size / (16.0 * num_layers * hidden_size)))
+    flops_per_iteration: float = checkpoint_activations_factor * ((
+        (2 + (2 * 3) + activation_function_factor * (intermediate_size / hidden_size)) * batch_size * sequence_length * num_layers * (hidden_size**2)
+    ) + (
+        ((  # Attention matrix & attention over values
+            4 * batch_size * (sequence_length ** 2) * hidden_size
+        ) / num_query_groups
+        ) +  # noqa: W504
+        # lm-head: logit layer
+        2 * batch_size * sequence_length * hidden_size * vocab_size)
+    )
     tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
     wandb_stats["stats/tflops"] = tflops
 
-    wandb.log(wandb_stats, step=wandb_iteration + 1)
+    wandb.log(wandb_stats, step=iteration)
 
     print("------------------------------------------------------------------")
-    print(f"iteration: {wandb_iteration + 1} , tflops: , loss: {accumulation_loss}")
+    print(f"iteration: {iteration} , TFLOPS: {tflops}, Tokens per sec: {tokens_per_sec}, Loss: {accumulation_loss}")
     print(
         "------------------------------------------------------------------",
         flush=True,

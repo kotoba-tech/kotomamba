@@ -9,8 +9,6 @@ from torch.distributed.fsdp import (  # noqa: F401
 from torch.distributed.fsdp.api import FullOptimStateDictConfig
 from pathlib import Path
 import os
-from typing import Type
-from llama_recipes.configs.training import train_config
 
 
 def get_model_state_dict(model: FSDP) -> dict[str, torch.Tensor]:
@@ -92,11 +90,9 @@ def save_rng_state(path: str) -> None:
 def save_checkpoint(
     model: FSDP,
     optimizer: torch.optim.Optimizer,
-    sampler: torch.utils.data.distributed.DistributedSampler,
     scheduler: torch.optim.lr_scheduler.LRScheduler,
     path: str,
     iteration: int,
-    train_config: Type[train_config],
 ) -> None:
     torch_distributed.barrier()
 
@@ -110,19 +106,14 @@ def save_checkpoint(
         model=model,
         path=f"{checkpoint_path}/model.pt",
     )
-    if train_config.save_optimizer:
-        save_optimizer_state_dict(
-            model=model,
-            optimizer=optimizer,
-            path=f"{checkpoint_path}/optimizer.pt",
-        )
+    save_optimizer_state_dict(
+        model=model,
+        optimizer=optimizer,
+        path=f"{checkpoint_path}/optimizer.pt",
+    )
     save_scheduler_state_dict(
         scheduler=scheduler,
         path=f"{checkpoint_path}/scheduler.pt",
-    )
-    save_sampler_state_dict(
-        sampler=sampler,
-        path=f"{checkpoint_path}/sampler.pt",
     )
     save_rng_state(
         path=f"{checkpoint_path}/rng.pt",

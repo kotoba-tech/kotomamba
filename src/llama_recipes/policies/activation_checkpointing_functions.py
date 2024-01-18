@@ -21,7 +21,7 @@ def apply_fsdp_checkpointing(model, model_name: str) -> None:
     """apply activation checkpointing to model
     returns None as model is updated directly
     """
-    print_rank_0("--> applying fsdp activation checkpointing...\n")
+    print_rank_0("--> applying fsdp activation checkpointing...")
 
     check_fn = lambda submodule: isinstance(  # noqa: E731
         submodule, get_model_decoder_layer(
