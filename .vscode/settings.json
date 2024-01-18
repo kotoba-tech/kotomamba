@@ -8,6 +8,7 @@
     "endoftext",
     "frombuffer",
     "FSDP",
+    "genlen",
     "itemsize",
     "kotomamba",
     "memmap",
@@ -19,10 +20,13 @@
     "numel",
     "pbar",
     "peft",
+    "promptlen",
     "randperm",
     "safetensors",
     "silu",
     "tflops",
+    "topk",
+    "topp",
     "Xformer"
   ]
 }
