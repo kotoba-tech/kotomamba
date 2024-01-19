@@ -62,17 +62,17 @@ GRAD_CLIP=1
 # checkpoint & tokenizer
 TOKENIZER_MODEL=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
 CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-1.4b/
-CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-1.4b/a-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}/
+CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-1.4b/a-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
 # data config
 
-DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge/
+DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge
 DATA_PATH=""
 
 # ja okazaki lab cc
-DATA_PATH="${DATA_PATH} 9443206541 /bb/llm/gaf51275/llama/datasets/mistral_16k_Llama2Tokenizer/okazaki_lab_cc_03_1500_split_0_text_document"
+DATA_PATH="${DATA_PATH} 1542288829 ${DATASET_DIR}/ja_wikipedia_text_document"
 
 # job name
 JOB_NAME="Mamba-1.4B-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
@@ -125,7 +125,8 @@ mpirun -np $NUM_GPUS \
   --checkpoint-type LOCAL_STATE_DICT \
   --fsdp-activation-checkpointing \
   --use-mpi \
-  --from_scratch \
+  --from-scratch \
+  --mamba \
   --wandb-entity "prj-jalm" \
   --wandb-project "ABCI-mamba" \
   --wandb-name "${JOB_NAME}"
