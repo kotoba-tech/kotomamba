@@ -5,7 +5,7 @@ import time
 
 import torch
 
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
 
@@ -31,7 +31,7 @@ print(f"Loading model {args.model_name}")
 is_mamba = "mamba" in args.model_name
 
 if is_mamba:
-    tokenizer = AutoTokenizer.from_pretrained(
+    tokenizer = LlamaTokenizer.from_pretrained(
         pretrained_model_name_or_path=args.tokenizer_path,
     )
     model = MambaLMHeadModel.from_pretrained(pretrained_model_name=args.model_name, device=device, dtype=dtype)
