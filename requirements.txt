@@ -14,3 +14,7 @@ deepspeed
 peft
 fire
 optimum
+
+# tokenize
+nltk
+sentencepiece
