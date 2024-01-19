@@ -1,3 +1,4 @@
+from calendar import c
 import torch
 import wandb
 import os
@@ -5,10 +6,14 @@ import time
 import math
 from typing import Any
 
+from megatron_lm.megatron.global_vars import get_args
+
 
 def log_model_info(model: torch.nn.Module) -> None:
+    args = get_args()
+
     model_config: dict[str, Any] = {}
-    if "mamba" in model_name:
+    if args.mamba:
         model_config["d_model"] = model.config.d_model
         model_config["fused_add_norm"] = model.config.fused_add_norm
         model_config["n_layers"] = model.config.n_layer
@@ -129,30 +134,80 @@ def log_wandb(
 
     checkpoint_activations_factor = 3
 
-    num_layers: int = model.config.num_hidden_layers
-    hidden_size: int = model.config.hidden_size
-    vocab_size: int = model.config.vocab_size
-    activation_func: str = model.config.hidden_act
-    intermediate_size: int = model.config.intermediate_size
+    args = get_args()
+
+    if args.mamba:
+        num_layers: int = model.config.num_hidden_layers
+        hidden_size: int = model.config.hidden_size
+        vocab_size: int = model.config.vocab_size
+        activation_func: str = model.config.hidden_act
+        intermediate_size: int = model.config.intermediate_size
+    else:
+        num_layers: int = model.config.n_layer
+        hidden_size: int = model.config.d_model
+        vocab_size: int = model.config.vocab_size
+        activation_func: str = "silu"
+        intermediate_size: int = hidden_size * 4
 
     activation_function_factor: int = 4  # GELU
     if activation_func == "silu":
         activation_function_factor = 4 + 2  # SWiGLU (upscaling + down scaling)
+    if activation_func == "silu" and args.mamba:
+        activation_function_factor = 4
 
     batch_size = batch_size * gradient_accumulation_steps
-    num_query_groups: int = model.config.num_attention_heads / model.config.num_key_value_heads
+    if args.mamba:
+        num_query_groups: int = 1
+    else:
+        num_query_groups: int = model.config.num_attention_heads / model.config.num_key_value_heads
 
     # tflops calculation
-    flops_per_iteration: float = checkpoint_activations_factor * ((
-        (2 + (2 * 3) + activation_function_factor * (intermediate_size / hidden_size)) * batch_size * sequence_length * num_layers * (hidden_size**2)
-    ) + (
-        ((  # Attention matrix & attention over values
-            4 * batch_size * (sequence_length ** 2) * hidden_size
-        ) / num_query_groups
-        ) +  # noqa: W504
-        # lm-head: logit layer
-        2 * batch_size * sequence_length * hidden_size * vocab_size)
-    )
+    if args.mamba:
+        """
+        2.8B mamba Architecture
+        Mamba(
+                (in_proj): Linear(in_features=2560, out_features=10240, bias=False)
+                (conv1d): Conv1d(5120, 5120, kernel_size=(4,), stride=(1,), padding=(3,), groups=5120)
+                (act): SiLU()
+                (x_proj): Linear(in_features=5120, out_features=192, bias=False)
+                (dt_proj): Linear(in_features=160, out_features=5120, bias=True)
+                (out_proj): Linear(in_features=5120, out_features=2560, bias=False)
+            )
+        """
+        conv_kernel: int = 4
+
+        flops_per_iteration: float = checkpoint_activations_factor * ((
+            # in_proj & out_proj
+            (activation_function_factor * (intermediate_size / hidden_size)) * batch_size * sequence_length * num_layers * (hidden_size**2)
+        ) + (
+            # convolution
+            # (2 * conv_kernel * (input_channel)) * (output_channel) * batch_size * sequence_length * num_layers
+            (2 * conv_kernel * (hidden_size * 2)) * (hidden_size * 2) * batch_size * sequence_length * num_layers
+        ) + (
+            # SSM: State Space Model
+            # x_proj & dt_proj
+            (2 * 2 * (hidden_size * 2) * math.ceil(hidden_size / 16)) * batch_size * sequence_length * num_layers + (
+                # A matrix (d_state * seq_len)
+                (2 * 16 * sequence_length) * batch_size * num_layers + (
+                    # B matrix (d_state * seq_len)
+                    2 * 16 * sequence_length * batch_size * num_layers + (
+                        # C matrix (d_state * seq_len)
+                        2 * 16 * sequence_length * batch_size * num_layers
+                    )
+                )
+            )
+        ))
+    else:
+        flops_per_iteration: float = checkpoint_activations_factor * ((
+            (2 + (2 * 3) + activation_function_factor * (intermediate_size / hidden_size)) * batch_size * sequence_length * num_layers * (hidden_size**2)
+        ) + (
+            ((  # Attention matrix & attention over values
+                4 * batch_size * (sequence_length ** 2) * hidden_size
+            ) / num_query_groups
+            ) +  # noqa: W504
+            # lm-head: logit layer
+            2 * batch_size * sequence_length * hidden_size * vocab_size)
+        )
     tflops: float = flops_per_iteration / (iteration_elapsed_time * (10**12))
     wandb_stats["stats/tflops"] = tflops
 

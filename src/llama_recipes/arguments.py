@@ -241,6 +241,8 @@ def _add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
 
     # model
     group.add_argument("--sliding-window-size", type=int, default=4096)
+    group.add_argument("--from-scratch", action="store_true")
+    group.add_argument("--mamba", action="store_true")
 
     # loss spike
     group.add_argument("--skip-batch", nargs='*', default=None)
