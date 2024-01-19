@@ -20,6 +20,7 @@ export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
 
 # mambda
 python benchmarks/benchmark_generation_mamba_simple.py \
-  --model-name "/groups/gcd50698/fujii/work/mamba/checkpoints/mamba-130m-hf" \
-  --prompt "My cat wrote all this CUDA code for a new language model and" \
+  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc/iter_0420000" \
+  --tokenizer-path "/bb/grandchallenge/gaf51389/tokenizer/llm-jp-tokenizer/hf/ver2.2/code10K_en20K_ja30K.ver2.2_hf_fast.b4" \
+  --prompt "United States of America" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2

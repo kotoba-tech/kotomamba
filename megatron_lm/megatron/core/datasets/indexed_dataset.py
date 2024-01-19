@@ -15,11 +15,12 @@ from functools import lru_cache
 from itertools import accumulate
 from types import TracebackType
 from typing import List, Optional, Tuple, Type, Union
+from numpy.typing import NDArray
 
 import numpy
 import torch
 
-from megatron.core.datasets.utils import log_single_rank
+from megatron_lm.megatron.core.datasets.utils import log_single_rank
 
 logger = logging.getLogger(__name__)
 
@@ -149,9 +150,9 @@ class _IndexWriter(object):
 
     def write(
         self,
-        sequence_lengths: List[int],
-        sequence_modes: Optional[List[int]],
-        document_indices: List[int],
+        sequence_lengths: List[int],  # type: ignore
+        sequence_modes: Optional[List[int]],  # type: ignore
+        document_indices: List[int],  # type: ignore
     ) -> None:
         """Write the index (.idx) file
 
@@ -173,8 +174,10 @@ class _IndexWriter(object):
         self.idx_writer.write(struct.pack("<Q", document_count))
 
         # the number of tokens per sequence
-        sequence_lengths = numpy.array(sequence_lengths, dtype=numpy.int32)  # type: ignore
-        self.idx_writer.write(sequence_lengths.tobytes(order="C"))  # type: ignore
+        sequence_lengths: NDArray[numpy.int32] = numpy.array(  # type: ignore
+            sequence_lengths, dtype=numpy.int32
+        )
+        self.idx_writer.write(sequence_lengths.tobytes(order="C"))
         del sequence_lengths
 
         # the byte offsets for all sequences
@@ -183,13 +186,17 @@ class _IndexWriter(object):
         del sequence_pointers
 
         # the sequence indices marking the end of each document
-        document_indices = numpy.array(document_indices, dtype=numpy.int64)  # type: ignore
-        self.idx_writer.write(document_indices.tobytes(order="C"))  # type: ignore
+        document_indices: NDArray[numpy.int64] = numpy.array(
+            document_indices, dtype=numpy.int64
+        )
+        self.idx_writer.write(document_indices.tobytes(order="C"))
 
         # the mode per sequence
         if sequence_modes is not None:
-            sequence_modes = numpy.array(sequence_modes, dtype=numpy.int8)  # type: ignore
-            self.idx_writer.write(sequence_modes.tobytes(order='C'))  # type: ignore
+            sequence_modes: NDArray[numpy.int8] = numpy.array(
+                sequence_modes, dtype=numpy.int8
+            )
+            self.idx_writer.write(sequence_modes.tobytes(order='C'))
             del sequence_modes
 
     def _sequence_pointers(self, sequence_lengths: List[int]) -> List[int]:
@@ -435,7 +442,7 @@ class MMapIndexedDataset(torch.utils.data.Dataset):
             sequence_modes = self.index.sequence_modes[idx] if self.multimodal else None  # type: ignore
             sequence_offsets = list(accumulate(sequence_lengths))
             sequences = numpy.split(  # type: ignore
-                numpy.frombuffer(
+                numpy.frombuffer(  # type: ignore
                     self.bin_buffer,  # type: ignore
                     dtype=self.index.dtype,  # type: ignore
                     count=sum(sequence_lengths),

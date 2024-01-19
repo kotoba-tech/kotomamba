@@ -6,10 +6,14 @@
     "einops",
     "Eleuther",
     "endoftext",
+    "finetuning",
     "frombuffer",
     "FSDP",
+    "genlen",
     "itemsize",
+    "kotobamba",
     "kotomamba",
+    "logit",
     "memmap",
     "memtrace",
     "MMIDIDX",
@@ -19,10 +23,13 @@
     "numel",
     "pbar",
     "peft",
+    "promptlen",
     "randperm",
     "safetensors",
     "silu",
     "tflops",
+    "topk",
+    "topp",
     "Xformer"
   ]
 }

@@ -8,8 +8,7 @@ from typing import Callable, List, Optional, Tuple
 
 import torch
 
-from megatron.core.datasets.utils import Split, log_single_rank, normalize
-from megatron.core.parallel_state import get_virtual_pipeline_model_parallel_rank
+from megatron_lm.megatron.core.datasets.utils import Split, log_single_rank, normalize
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BlendedMegatronDatasetConfig:
     """Configuration object for megatron-core blended and megatron datasets
-    
+
     Attributes:
         is_built_on_rank (Callable): A callable which returns True if the dataset should be built
         on the current rank. It should be Megatron Core parallelism aware i.e. global rank, group
@@ -28,13 +27,13 @@ class BlendedMegatronDatasetConfig:
         sequence_length (int): The sequence length.
 
         blend (Optional[List[str]]): The blend string, consisting of either a single dataset or a
-        flattened sequential sequence of weight-dataset pairs. For exampe, ["dataset-path1"] and
+        flattened sequential sequence of weight-dataset pairs. For example, ["dataset-path1"] and
         ["50", "dataset-path1", "50", "dataset-path2"] are both valid. Not to be used with
         'blend_per_split'. Defaults to None.
 
         blend_per_split (blend_per_split: Optional[List[Optional[List[str]]]]): A set of blend
         strings, as defined above, one for each split distribution. Not to be used with 'blend'.
-        Defauls to None.
+        Defaults to None.
 
         split (Optional[str]): The split string, a comma separated weighting for the dataset splits
         when drawing samples from a single distribution. Not to be used with 'blend_per_split'.
@@ -67,7 +66,7 @@ class BlendedMegatronDatasetConfig:
     def __post_init__(self):
         if torch.distributed.is_initialized():
             gb_rank = torch.distributed.get_rank()
-            vp_rank = get_virtual_pipeline_model_parallel_rank()
+            vp_rank = 0
             if gb_rank == 0 and (vp_rank == 0 or vp_rank is None):
                 assert (
                     self.is_built_on_rank()

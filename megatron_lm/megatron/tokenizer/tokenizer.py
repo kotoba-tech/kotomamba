@@ -1,28 +1,19 @@
 # Copyright (c) 2023, NVIDIA CORPORATION. All rights reserved.
 
 """Megatron tokenizers."""
-
+import argparse
 from abc import ABC
 from abc import abstractmethod
-from transformers import AutoTokenizer
-from .gpt2_tokenization import GPT2Tokenizer
+from llama_recipes.utils.distributed import is_rank_0
 
 
-def build_tokenizer(args):
+def build_tokenizer(args: argparse.Namespace):
     """Initialize tokenizer."""
-    if args.rank == 0:
-        print('> building {} tokenizer ...'.format(args.tokenizer_type),
-              flush=True)
+    if is_rank_0():
+        print('> building {} tokenizer ...'.format(args.tokenizer_type), flush=True)
 
     # Select and instantiate the tokenizer.
-    if args.tokenizer_type == 'MambaTokenizer':
-        assert args.tokenizer_model is not None
-        tokenizer = _MambaTokenizer(args.tokenizer_model)
-    elif args.tokenizer_type == 'GPT2BPETokenizer':
-        assert args.vocab_file is not None
-        assert args.merge_file is not None
-        tokenizer = _GPT2BPETokenizer(args.vocab_file, args.merge_file)
-    elif args.tokenizer_type == 'SentencePieceTokenizer':
+    if args.tokenizer_type == 'SentencePieceTokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _SentencePieceTokenizer(args.tokenizer_model, vocab_extra_ids=args.vocab_extra_ids)
     elif args.tokenizer_type == 'GPTSentencePieceTokenizer':
@@ -35,13 +26,13 @@ def build_tokenizer(args):
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
     else:
-        raise NotImplementedError('{} tokenizer is not '
-                                  'implemented.'.format(args.tokenizer_type))
+        raise NotImplementedError('{} tokenizer is not implemented.'.format(args.tokenizer_type))
 
     # Add vocab size (if not already set from a checkpoint).
     if getattr(args, "padded_vocab_size", None) is None:
-        args.padded_vocab_size = _vocab_size_with_padding(tokenizer.vocab_size,
-                                                          args)
+        args.padded_vocab_size = _vocab_size_with_padding(
+            orig_vocab_size=tokenizer.vocab_size, args=args
+        )
 
     return tokenizer
 
@@ -51,14 +42,11 @@ def _vocab_size_with_padding(orig_vocab_size, args):
     still having GPU friendly size."""
 
     after = orig_vocab_size
-    multiple = args.make_vocab_size_divisible_by * \
-        args.tensor_model_parallel_size
+    multiple = args.make_vocab_size_divisible_by
     while (after % multiple) != 0:
         after += 1
-    if args.rank == 0:
-        print(' > padded vocab (size: {}) with {} dummy tokens '
-              '(new size: {})'.format(
-                  orig_vocab_size, after - orig_vocab_size, after), flush=True)
+    if is_rank_0():
+        print(' > padded vocab (size: {}) with {} dummy tokens (new size: {})'.format(orig_vocab_size, after - orig_vocab_size, after), flush=True)
     return after
 
 
@@ -91,101 +79,29 @@ class AbstractTokenizer(ABC):
         pass
 
     def detokenize(self, token_ids):
-        raise NotImplementedError('detokenizer is not implemented for {} '
-                                  'tokenizer'.format(self.name))
+        raise NotImplementedError(
+            'detokenizer is not implemented for {} tokenizer'.format(self.name)
+        )
 
     @property
     def cls(self):
-        raise NotImplementedError('CLS is not provided for {} '
-                                  'tokenizer'.format(self.name))
+        raise NotImplementedError('CLS is not provided for {} tokenizer'.format(self.name))
 
     @property
     def sep(self):
-        raise NotImplementedError('SEP is not provided for {} '
-                                  'tokenizer'.format(self.name))
+        raise NotImplementedError('SEP is not provided for {} tokenizer'.format(self.name))
 
     @property
     def pad(self):
-        raise NotImplementedError('PAD is not provided for {} '
-                                  'tokenizer'.format(self.name))
+        raise NotImplementedError('PAD is not provided for {} tokenizer'.format(self.name))
 
     @property
     def eod(self):
-        raise NotImplementedError('EOD is not provided for {} '
-                                  'tokenizer'.format(self.name))
+        raise NotImplementedError('EOD is not provided for {} tokenizer'.format(self.name))
 
     @property
     def mask(self):
-        raise NotImplementedError('MASK is not provided for {} '
-                                  'tokenizer'.format(self.name))
-
-
-class _GPT2BPETokenizer(AbstractTokenizer):
-    """Original GPT2 BPE tokenizer."""
-
-    def __init__(self, vocab_file, merge_file):
-        name = 'GPT2 BPE'
-        super().__init__(name)
-
-        self.tokenizer = GPT2Tokenizer(vocab_file, merge_file, errors='replace',
-                                       special_tokens=[], max_len=None)
-        self.eod_id = self.tokenizer.encoder['<|endoftext|>']
-
-    @property
-    def vocab_size(self):
-        return len(self.tokenizer.encoder)
-
-    @property
-    def vocab(self):
-        return self.tokenizer.encoder
-
-    @property
-    def inv_vocab(self):
-        return self.tokenizer.decoder
-
-    def tokenize(self, text):
-        return self.tokenizer.encode(text)
-
-    def detokenize(self, token_ids):
-        return self.tokenizer.decode(token_ids)
-
-    @property
-    def eod(self):
-        return self.eod_id
-
-
-class _MambaTokenizer(AbstractTokenizer):
-    """Designed to Integrate HF's Tokenizer library."""
-
-    def __init__(self, model_file: str):
-        name = "MambaTokenizer"
-        super().__init__(name)
-        # TODO: check if this is the correct vocab size.
-        self.tokenizer = AutoTokenizer.from_pretrained(model_file)
-        self.eod_id = self.tokenizer.convert_tokens_to_ids("<|endoftext|>")
-        self.pad_id = self.tokenizer.convert_tokens_to_ids("<|padding|>")
-
-    @property
-    def vocab_size(self):
-        return self.tokenizer.vocab_size
-
-    @property
-    def vocab(self):
-        return self.tokenizer.get_vocab()
-
-    @property
-    def inv_vocab(self):
-        return self.tokenizer.decoder  # type: ignore
-
-    def tokenize(self, text: str):
-        return self.tokenizer.encode(text)
-
-    def detokenize(self, token_ids):
-        return self.tokenizer.decode(token_ids)
-
-    @property
-    def eod(self):
-        return self.eod_id
+        raise NotImplementedError('MASK is not provided for {} tokenizer'.format(self.name))
 
 
 class _SentencePieceTokenizer(AbstractTokenizer):
@@ -196,8 +112,10 @@ class _SentencePieceTokenizer(AbstractTokenizer):
         super().__init__(name)
 
         import sentencepiece
-        self.tokenizer = sentencepiece.SentencePieceProcessor(model_file=model_file)  # type: ignore
-        self._initalize(vocab_extra_ids)
+        self.tokenizer = sentencepiece.SentencePieceProcessor(
+            model_file=model_file  # type: ignore
+        )
+        self._initialize(vocab_extra_ids)
 
     def _populate_vocab(self):
         self._vocab = {}
@@ -208,7 +126,7 @@ class _SentencePieceTokenizer(AbstractTokenizer):
             self._inv_vocab[i] = t
             self._vocab[t] = i
 
-    def _initalize(self, vocab_extra_ids):
+    def _initialize(self, vocab_extra_ids):
         self._populate_vocab()
         self._special_tokens = {}
         self._inv_special_tokens = {}
@@ -369,7 +287,7 @@ class _GPTSentencePieceTokenizer(_SentencePieceTokenizer):
     def __init__(self, model_file,):
         super().__init__(model_file, vocab_extra_ids=0)
 
-    def _initalize(self, vocab_extra_ids):
+    def _initialize(self, vocab_extra_ids):
         self._populate_vocab()
 
         self._pad_id = self.tokenizer.pad_id()
@@ -409,7 +327,7 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
     def __init__(self, model_file,):
         super().__init__(model_file, vocab_extra_ids=0)
 
-    def _initalize(self, vocab_extra_ids):
+    def _initialize(self, vocab_extra_ids):
         self._populate_vocab()
 
         # BOS / EOS token IDs
@@ -485,3 +403,56 @@ class _NullTokenizer:
     @property
     def additional_special_tokens_ids(self):
         return None
+
+
+class HFPreTrainedTokenizer(AbstractTokenizer):
+    """
+    Huggingface Format Pretrained Tokenizer
+    """
+    def __init__(self, model_file: str, trust_remote_code: bool = False) -> None:
+        name = 'HFPreTrainedTokenizer'
+        super().__init__(name)
+
+        from transformers import AutoTokenizer
+
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path=model_file,
+            trust_remote_code=trust_remote_code,
+        )
+        special_tokens_dict: dict[str, str] = {
+            "eod_token": "<EOD>",
+        }
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.add_special_tokens({'pad_token': '<pad>'})
+
+        self.tokenizer.add_special_tokens(
+            special_tokens_dict  # type: ignore
+        )
+
+    @property
+    def vocab_size(self) -> int:
+        return self.tokenizer.vocab_size
+
+    @property
+    def vocab(self):
+        return self.tokenizer.get_vocab()
+
+    @property
+    def inv_vocab(self):
+        return self.tokenizer.decoder  # type: ignore
+
+    def tokenize(self, text: str):
+        return self.tokenizer.encode(text)
+
+    def detokenize(self, token_ids) -> str:
+        return self.tokenizer.decode(token_ids)
+
+    @property
+    def eod(self):
+        return self.tokenizer.convert_tokens_to_ids(
+            self.tokenizer.eod_token  # type: ignore
+        )
+
+    @property
+    def pad(self) -> int:
+        return self.tokenizer.pad_token_id  # type: ignore

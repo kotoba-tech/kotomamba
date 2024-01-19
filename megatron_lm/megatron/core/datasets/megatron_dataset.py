@@ -9,9 +9,9 @@ from typing import Dict, List
 import numpy
 import torch
 
-from megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
-from megatron.core.datasets.indexed_dataset import MMapIndexedDataset
-from megatron.core.datasets.utils import Split
+from megatron_lm.megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
+from megatron_lm.megatron.core.datasets.indexed_dataset import MMapIndexedDataset
+from megatron_lm.megatron.core.datasets.utils import Split
 
 
 class MegatronDataset(ABC, torch.utils.data.Dataset):
@@ -92,7 +92,7 @@ class MegatronDataset(ABC, torch.utils.data.Dataset):
         pass
 
     @abstractstaticmethod
-    def is_multimodal() -> bool:
+    def is_multimodal() -> bool:  # type: ignore
         """Return True if the inheritor class and its internal MMapIndexedDataset are multimodal
 
         Returns:
@@ -101,7 +101,7 @@ class MegatronDataset(ABC, torch.utils.data.Dataset):
         pass
 
     @abstractstaticmethod
-    def is_split_by_sequence() -> bool:
+    def is_split_by_sequence() -> bool:   # type: ignore
         """Return whether the dataset is split by sequence
 
         For example, the GPT train/valid/test split is document agnostic

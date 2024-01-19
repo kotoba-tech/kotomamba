@@ -46,6 +46,26 @@
     +    libs = subprocess.check_output(["/usr/sbin/ldconfig", "-p"]).decode()
     ```
 
+5. change python3-config path & make cpp file
+
+    `megatron_lm/megatron/core/datasets/Makefile`
+
+    ```bash
+    CXXFLAGS += -O3 -Wall -shared -std=c++11 -fPIC -fdiagnostics-color
+    CPPFLAGS += $(shell python3 -m pybind11 --includes)
+    LIBNAME = helpers
+    LIBEXT = $(shell ~/.pyenv/versions/3.10.12/bin/python3-config --extension-suffix)
+
+    default: $(LIBNAME)$(LIBEXT)
+
+    %$(LIBEXT): %.cpp
+      $(CXX) $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+    ```
+
+    change `~/.pyenv/versions/3.10.12/bin/python3-config` to your python3-config path
+
+    And then. `make` at `kotobamba/megatron_lm/megatron/core/datasets`.
+
 ## Inference
 
 you can measure throughput of inference in 2.8B size model

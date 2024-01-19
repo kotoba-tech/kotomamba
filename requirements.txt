@@ -14,3 +14,10 @@ deepspeed
 peft
 fire
 optimum
+
+# tokenize
+nltk
+sentencepiece
+
+# megatron_lm
+pybind11

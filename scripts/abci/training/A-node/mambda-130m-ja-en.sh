@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=2:21:30:00
+#$ -l h_rt=2:08:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-130m/
 #$ -cwd

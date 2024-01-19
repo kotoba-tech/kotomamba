@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_AF=2
-#$ -l h_rt=2:22:00:00
+#$ -l h_rt=1:12:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-1.4b/
 #$ -cwd
@@ -43,40 +43,39 @@ while read -r line; do
   echo "${line} slots=${NUM_GPU_PER_NODE}"
 done <"$SGE_JOB_HOSTLIST" >"$HOSTFILE_NAME"
 
-# training settings
-NUM_EPOCHS=1
+# training config
+SEQ_LENGTH=2048
+DATA_PARALLEL_SIZE=$NUM_GPUS
 
-# batch size
-BATCH_SIZE=16
+MICRO_BATCH_SIZE=16
 GLOBAL_BATCH_SIZE=512
-GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
+TRAIN_STEPS=381500
 
-if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
-  echo "Error: Gradient Accumulation Steps is less than 1. Exiting."
-  exit 1
-fi
-
-# optimizer
+# optimizer config
 LR=1e-3
-LR_MIN=1e-5
-LR_DECAY=0.80
-LR_WARMUP=0.05
-LR_DECAY_STYLE="cosine"
+MIN_LR=1e-5
+LR_WARMUP_STEPS=2000
+LR_DECAY_STEPS=$TRAIN_STEPS
 WEIGHT_DECAY=0.1
+GRAD_CLIP=1
 
-# seed
-SEED=42
+# checkpoint & tokenizer
+TOKENIZER_MODEL=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
+CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-1.4b/
+CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-1.4b/a-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}
 
-# dataset
-NUM_WORKERS_DATALOADER=2
-DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/mamba_ja_en
+mkdir -p ${CHECKPOINT_SAVE_DIR}
 
-# checkpoint path
-CHECKPOINTS_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-1.4b/a-node/2node/pile-okazaki-cc
-mkdir -p $CHECKPOINTS_PATH
+# data config
 
-# model dir
-MODEL_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-1.4b
+DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge
+DATA_PATH=""
+
+# ja okazaki lab cc
+DATA_PATH="${DATA_PATH} 1542288829 ${DATASET_DIR}/ja_wikipedia_text_document"
+
+# job name
+JOB_NAME="Mamba-1.4B-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
 
 # huggingface cache
 export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
@@ -93,34 +92,41 @@ mpirun -np $NUM_GPUS \
   -bind-to none -map-by slot \
   -x PATH \
   python pretrain.py \
-  --enable_fsdp \
-  --low_cpu_fsdp \
-  --mixed_precision \
-  --use_bf16 \
-  --num_epochs $NUM_EPOCHS \
-  --model_name $MODEL_DIR \
-  --tokenizer_name /bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model \
-  --batch_size $BATCH_SIZE \
-  --gradient_accumulation_steps $GRADIENT_ACCUMULATION_STEPS \
-  --fsdp_activation_checkpointing \
-  --lr $LR \
-  --lr_min $LR_MIN \
-  --lr_warmup $LR_WARMUP \
-  --lr_decay $LR_DECAY \
-  --lr_decay_style $LR_DECAY_STYLE \
-  --weight_decay $WEIGHT_DECAY \
-  --seed $SEED \
-  --dataset "pile_dataset" \
-  --train_data_path $DATASET_DIR/mamba-en-ja_text_document.bin \
-  --num_workers_dataloader $NUM_WORKERS_DATALOADER \
-  --save_model \
-  --save_optimizer \
-  --save_interval_iteration 1000 \
-  --context-size 2048 \
-  --save_checkpoint_path $CHECKPOINTS_PATH \
-  --load_checkpoint_path $CHECKPOINTS_PATH \
-  --from_scratch \
-  --use_mpi \
-  --wandb-entity "fine-tuning-llm" \
-  --wandb-project "mamba" \
-  --wandb_name "1.4b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"
+  --seq-length ${SEQ_LENGTH} \
+  --sliding-window-size ${SEQ_LENGTH} \
+  --micro-batch-size ${MICRO_BATCH_SIZE} \
+  --global-batch-size ${GLOBAL_BATCH_SIZE} \
+  --train-iters ${TRAIN_STEPS} \
+  --tokenizer-type SentencePieceTokenizer \
+  --tokenizer-model ${TOKENIZER_MODEL} \
+  --data-path ${DATA_PATH} \
+  --split 949,50,1 \
+  --lr ${LR} \
+  --min-lr ${MIN_LR} \
+  --lr-decay-style cosine \
+  --lr-warmup-iters ${LR_WARMUP_STEPS} \
+  --lr-decay-iters ${LR_DECAY_STEPS} \
+  --weight-decay ${WEIGHT_DECAY} \
+  --grad-clip-norm ${GRAD_CLIP} \
+  --optimizer adam \
+  --adam-beta1 0.9 \
+  --adam-beta2 0.95 \
+  --adam-eps 1e-6 \
+  --save-interval 500 \
+  --eval-interval 100 \
+  --eval-iters 10 \
+  --bf16 \
+  --mixed-precision \
+  --base-model ${CHECKPOINT_DIR} \
+  --save ${CHECKPOINT_SAVE_DIR} \
+  --load ${CHECKPOINT_SAVE_DIR} \
+  --low-cpu-fsdp \
+  --sharding-strategy FULL_SHARD \
+  --checkpoint-type LOCAL_STATE_DICT \
+  --fsdp-activation-checkpointing \
+  --use-mpi \
+  --from-scratch \
+  --mamba \
+  --wandb-entity "prj-jalm" \
+  --wandb-project "ABCI-mamba" \
+  --wandb-name "${JOB_NAME}"

@@ -5,16 +5,18 @@ import argparse
 import math
 import json
 import os
-from re import T
 import sys
 
-from sympy import N
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                             os.path.pardir)))
+root_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.path.pardir, os.path.pardir)
+)
+
+sys.path.append(root_dir)
+sys.path.append(f"{root_dir}/src")
+
 import time
 import gzip
 import glob
-import torch
 import numpy as np
 import multiprocessing
 try:
@@ -23,8 +25,8 @@ try:
 except ImportError:
     nltk_available = False
 
-from megatron.tokenizer import build_tokenizer
-from megatron.core.datasets import indexed_dataset
+from megatron_lm.megatron.tokenizer import build_tokenizer
+from megatron_lm.megatron.core.datasets import indexed_dataset
 
 
 # https://stackoverflow.com/questions/33139531/preserve-empty-lines-with-nltks-punkt-tokenizer
@@ -428,4 +430,3 @@ def main():
 if __name__ == '__main__':
 
     main()
-

@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_F=64
-#$ -l h_rt=00:30:00
+#$ -l rt_F=128
+#$ -l h_rt=10:00:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
@@ -48,7 +48,7 @@ NUM_EPOCHS=1
 
 # batch size
 BATCH_SIZE=2
-GLOBAL_BATCH_SIZE=512
+GLOBAL_BATCH_SIZE=1024
 GRADIENT_ACCUMULATION_STEPS=$((GLOBAL_BATCH_SIZE / (BATCH_SIZE * NUM_GPUS)))
 
 if (($GRADIENT_ACCUMULATION_STEPS < 1)); then
@@ -121,6 +121,7 @@ mpirun -np $NUM_GPUS \
   --load_checkpoint_path $CHECKPOINTS_PATH \
   --from_scratch \
   --use_mpi \
-  --wandb-entity "fine-tuning-llm" \
-  --wandb-project "mamba" \
+  --seed 1234 \
+  --wandb-entity "prj-jalm" \
+  --wandb-project "ABCI-mamba" \
   --wandb_name "2.8b-${NODE_TYPE}-${NUM_NODES}nodes-pile-okazaki-cc"

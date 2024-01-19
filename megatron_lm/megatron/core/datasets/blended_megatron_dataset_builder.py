@@ -7,11 +7,11 @@ from typing import Any, Callable, List, Optional, Tuple, Type, Union
 import numpy
 import torch
 
-from megatron.core.datasets.blended_dataset import BlendedDataset
-from megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
-from megatron.core.datasets.indexed_dataset import MMapIndexedDataset
-from megatron.core.datasets.megatron_dataset import MegatronDataset
-from megatron.core.datasets.utils import Split, normalize
+from megatron_lm.megatron.core.datasets.blended_dataset import BlendedDataset
+from megatron_lm.megatron.core.datasets.blended_megatron_dataset_config import BlendedMegatronDatasetConfig
+from megatron_lm.megatron.core.datasets.indexed_dataset import MMapIndexedDataset
+from megatron_lm.megatron.core.datasets.megatron_dataset import MegatronDataset
+from megatron_lm.megatron.core.datasets.utils import Split, normalize
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +41,9 @@ class BlendedMegatronDatasetBuilder(object):
 
     def build(self) -> List[Optional[Union[BlendedDataset, MegatronDataset]]]:
         """Build all dataset splits according to the provided blend(s)
-        
+
         This method is distributed-aware and must be called on all ranks.
-        
+
         The dataset splits returned can vary according to the config. Supply config.blend and
         config.split to build BlendedDataset and/or MegatronDataset splits from the same
         distribution. Supply config.blend_per_split to build BlendedDataset and/or MegatronDataset
@@ -59,7 +59,7 @@ class BlendedMegatronDatasetBuilder(object):
         self,
     ) -> List[Optional[Union[BlendedDataset, MegatronDataset]]]:
         """Build all dataset splits according to the provided blend(s)
-        
+
         See the BlendedMegatronDatasetBuilder.build alias for more information.
 
         Returns:
@@ -73,7 +73,11 @@ class BlendedMegatronDatasetBuilder(object):
 
             # Blend consists of a single prefix
             if len(blend) == 1:
-                return self._build_megatron_dataset_splits(blend[0], split, self.sizes)
+                return self._build_megatron_dataset_splits(
+                    blend[0],
+                    split,  # type: ignore
+                    self.sizes
+                )
 
             # Blend consists of multiple weights and prefixes
             (
@@ -86,7 +90,9 @@ class BlendedMegatronDatasetBuilder(object):
 
             for i in range(len(prefix_per_dataset)):
                 megatron_datasets_split = self._build_megatron_dataset_splits(
-                    prefix_per_dataset[i], split, sizes_per_dataset[i]
+                    prefix_per_dataset[i],
+                    split,  # type: ignore
+                    sizes_per_dataset[i]
                 )
                 for j in range(len(megatron_datasets_split)):
                     megatron_datasets[j].append(megatron_datasets_split[j])
@@ -99,7 +105,7 @@ class BlendedMegatronDatasetBuilder(object):
             for i in range(len(megatron_datasets)):
                 is_none = map(lambda _: _ is None, megatron_datasets[i])
 
-                if split[i] is None:
+                if split[i] is None:  # type: ignore
                     assert all(is_none)
                     blended_datasets.append(None)
                 else:
@@ -120,7 +126,7 @@ class BlendedMegatronDatasetBuilder(object):
         else:
             blended_datasets = []
             for i in range(len(Split)):
-                blend = self.config.blend_per_split[i]
+                blend = self.config.blend_per_split[i]  # type: ignore
 
                 # Blend is not provided
                 if not blend:
@@ -128,14 +134,18 @@ class BlendedMegatronDatasetBuilder(object):
                     continue
 
                 split_spoof = [None] * len(Split)
-                split_spoof[i] = (0.0, 1.0)
+                split_spoof[i] = (0.0, 1.0)  # type: ignore
                 sizes_spoof = [0] * len(Split)
                 sizes_spoof[i] = self.sizes[i]
 
                 # Blend consists of a sigle prefix
                 if len(blend) == 1:
                     blended_datasets.append(
-                        self._build_megatron_dataset_splits(blend[0], split_spoof, sizes_spoof)[i]
+                        self._build_megatron_dataset_splits(
+                            blend[0],
+                            split_spoof,  # type: ignore
+                            sizes_spoof
+                        )[i]
                     )
 
                 # Blend consists of multiple weights and prefixes
@@ -150,7 +160,9 @@ class BlendedMegatronDatasetBuilder(object):
                     for j in range(len(prefix_per_dataset)):
                         megatron_datasets.append(
                             self._build_megatron_dataset_splits(
-                                prefix_per_dataset[j], split_spoof, sizes_per_dataset[j],
+                                prefix_per_dataset[j],
+                                split_spoof,  # type: ignore
+                                sizes_per_dataset[j],
                             )[i]
                         )
 
@@ -197,8 +209,8 @@ class BlendedMegatronDatasetBuilder(object):
             split_indices = []
             for i, _ in enumerate(Split):
                 if split[i] is not None:
-                    beg = int(round(split[i][0] * float(num_elements)))
-                    end = int(round(split[i][1] * float(num_elements)))
+                    beg = int(round(split[i][0] * float(num_elements)))  # type: ignore
+                    end = int(round(split[i][1] * float(num_elements)))  # type: ignore
                     split_indices.append(
                         numpy.arange(start=beg, stop=end, step=1, dtype=numpy.int32)
                     )
@@ -258,10 +270,10 @@ class BlendedMegatronDatasetBuilder(object):
                     dataset = cls(*args)
                 except OSError as err:
                     log = (
-                        f"Failed to write dataset materials to the data cache directory. "
-                        + f"Please supply a directory to which you have write access via "
-                        + f"the path_to_cache attribute in BlendedMegatronDatasetConfig and "
-                        + f"retry. Refer to the preserved traceback above for more information."
+                        "Failed to write dataset materials to the data cache directory. "
+                        + "Please supply a directory to which you have write access via "
+                        + "the path_to_cache attribute in BlendedMegatronDatasetConfig and "
+                        + "retry. Refer to the preserved traceback above for more information."
                     )
                     raise Exception(log) from err
 
@@ -280,9 +292,9 @@ def _get_prefixes_weights_and_sizes_for_blend(
     blend: List[str], target_num_samples_per_split: List[int]
 ) -> Tuple[List[str], List[float], List[List[int]]]:
     """Determine the contribution of the MegatronDataset splits to the BlendedDataset splits
-    
+
     Args:
-        blend (List[str]): e.g. ["30", "path/to/dataset_1_prefix", "70", 
+        blend (List[str]): e.g. ["30", "path/to/dataset_1_prefix", "70",
         "path/to/dataset_2_prefix"]
 
         target_num_samples_per_split (List[int]): The number of samples to target for each

@@ -4,9 +4,6 @@ import argparse
 import time
 
 import torch
-import torch.nn.functional as F
-
-from einops import rearrange
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -15,6 +12,7 @@ from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
 
 parser = argparse.ArgumentParser(description="Generation benchmarking")
 parser.add_argument("--model-name", type=str, default="state-spaces/mamba-130m")
+parser.add_argument("--tokenizer-path", type=str, default="EleutherAI/gpt-neox-20b")
 parser.add_argument("--prompt", type=str, default=None)
 parser.add_argument("--promptlen", type=int, default=100)
 parser.add_argument("--genlen", type=int, default=100)
@@ -33,14 +31,19 @@ print(f"Loading model {args.model_name}")
 is_mamba = "mamba" in args.model_name
 
 if is_mamba:
-    tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
-    model = MambaLMHeadModel.from_pretrained(args.model_name, device=device, dtype=dtype)
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path=args.tokenizer_path,
+    )
+    model = MambaLMHeadModel.from_pretrained(pretrained_model_name=args.model_name, device=device, dtype=dtype)
 else:
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrained_model_name_or_path=args.tokenizer_path,
+    )
     model = AutoModelForCausalLM.from_pretrained(args.model_name, device_map={"": device}, torch_dtype=dtype)
 
 model.eval()
 print(f"Number of parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+
 
 torch.random.manual_seed(0)
 if args.prompt is None:
@@ -53,7 +56,7 @@ else:
 max_length = input_ids.shape[1] + args.genlen
 
 if is_mamba:
-    fn = lambda: model.generate(
+    fn = lambda: model.generate(  # noqa:
         input_ids=input_ids,
         max_length=max_length,
         cg=True,
@@ -66,7 +69,7 @@ if is_mamba:
         repetition_penalty=args.repetition_penalty,
     )
 else:
-    fn = lambda: model.generate(
+    fn = lambda: model.generate(  # noqa:
         input_ids=input_ids,
         attention_mask=attn_mask,
         max_length=max_length,
@@ -80,12 +83,14 @@ else:
     )
 out = fn()
 if args.prompt is not None:
-    print(tokenizer.batch_decode(out.sequences.tolist()))
+    print(tokenizer.batch_decode(out.sequences.tolist()))  # type: ignore
 
 torch.cuda.synchronize()
 start = time.time()
 for _ in range(repeats):
     fn()
 torch.cuda.synchronize()
-print(f"Prompt length: {len(input_ids[0])}, generation length: {len(out.sequences[0]) - len(input_ids[0])}")
+print(
+    f"Prompt length: {len(input_ids[0])}, generation length: {len(out.sequences[0]) - len(input_ids[0])}"  # type: ignore
+)
 print(f"{args.model_name} prompt processing + decoding time: {(time.time() - start) / repeats * 1000:.0f}ms")
