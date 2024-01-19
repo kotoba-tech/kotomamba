@@ -1,5 +1,11 @@
 import argparse
 
+import sys
+import os
+
+current_path: str = os.getcwd()
+sys.path.append(f"{current_path}/src")
+
 import torch
 from transformers import AutoModelForCausalLM
 
