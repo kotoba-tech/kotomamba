@@ -9,7 +9,6 @@ kotomamba supports the following features:
   - support V100, A100
 - convert to HF transformers checkpoint
 - continual pre-training Mamba model
-- instruction tuning Mamba model
 
 ## Installation
 

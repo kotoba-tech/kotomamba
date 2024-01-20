@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=1
+#$ -l rt_F=1
 #$ -l h_rt=1:00:00
 #$ -j y
 #$ -o outputs/convert/ckpt/
@@ -17,23 +17,23 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=420000
-end=420000
-increment=100000
+start=500
+end=500
+increment=500
 
 for ((i = start; i <= end; i += increment)); do
   ITERATION=$i
   FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
-  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc/${FORMATTED_ITERATION}/model.pt
-  OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-130m/a-node/2node/pile-okazaki-cc/${FORMATTED_ITERATION}
-  TOKNENIZER_PATH=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code10K_en20K_ja30K.ver2.2.model
+  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_1024_LR_8e-4_MINLR_1e-5_WARMUP_2000_WD_0.1_GC_1/${FORMATTED_ITERATION}/model.pt
+  OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}
+  TOKNENIZER_PATH=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
 
   echo "convert ${CHECK_POINT_PATH} to ${OUTPUT_PATH}"
 
   mkdir -p $OUTPUT_PATH
 
-  BASE_MODEL_CHECKPOINT=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-130m
+  BASE_MODEL_CHECKPOINT=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b
 
   python tools/convert_ckpt/convert_mamba.py \
     --model $BASE_MODEL_CHECKPOINT \
