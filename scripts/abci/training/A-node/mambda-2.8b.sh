@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=2
+#$ -l rt_AF=4
 #$ -l h_rt=10:00:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-2.8b/
@@ -62,7 +62,7 @@ GRAD_CLIP=1
 # checkpoint & tokenizer
 TOKENIZER_MODEL=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
 CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b/
-CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}
+CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -71,8 +71,44 @@ mkdir -p ${CHECKPOINT_SAVE_DIR}
 DATASET_DIR=/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge
 DATA_PATH=""
 
-# ja okazaki lab cc
+# ja wikipedia
 DATA_PATH="${DATA_PATH} 1542288829 ${DATASET_DIR}/ja_wikipedia_text_document"
+
+# ja okazaki lab cc
+DATA_PATH="${DATA_PATH} 9051743591 ${DATASET_DIR}/merged_0_text_document"
+DATA_PATH="${DATA_PATH} 9091558536 ${DATASET_DIR}/merged_1_text_document"
+DATA_PATH="${DATA_PATH} 10282417095 ${DATASET_DIR}/merged_2_text_document"
+DATA_PATH="${DATA_PATH} 10441556324 ${DATASET_DIR}/merged_3_text_document"
+DATA_PATH="${DATA_PATH} 10197730938 ${DATASET_DIR}/merged_4_text_document"
+DATA_PATH="${DATA_PATH} 9201870575 ${DATASET_DIR}/merged_5_text_document"
+DATA_PATH="${DATA_PATH} 8507913222 ${DATASET_DIR}/merged_6_text_document"
+DATA_PATH="${DATA_PATH} 9519143202 ${DATASET_DIR}/merged_7_text_document"
+DATA_PATH="${DATA_PATH} 8863540237 ${DATASET_DIR}/merged_8_text_document"
+DATA_PATH="${DATA_PATH} 9584205381 ${DATASET_DIR}/merged_9_text_document"
+DATA_PATH="${DATA_PATH} 9048660573 ${DATASET_DIR}/merged_10_text_document"
+DATA_PATH="${DATA_PATH} 9396452751 ${DATASET_DIR}/merged_11_text_document"
+DATA_PATH="${DATA_PATH} 8759020541 ${DATASET_DIR}/merged_12_text_document"
+DATA_PATH="${DATA_PATH} 8775232898 ${DATASET_DIR}/merged_13_text_document"
+DATA_PATH="${DATA_PATH} 8350857380 ${DATASET_DIR}/merged_14_text_document"
+DATA_PATH="${DATA_PATH} 11007226809 ${DATASET_DIR}/merged_15_text_document"
+DATA_PATH="${DATA_PATH} 10234395781 ${DATASET_DIR}/merged_16_text_document"
+DATA_PATH="${DATA_PATH} 8830411980 ${DATASET_DIR}/merged_17_text_document"
+DATA_PATH="${DATA_PATH} 9622452380 ${DATASET_DIR}/merged_18_text_document"
+DATA_PATH="${DATA_PATH} 10754069777 ${DATASET_DIR}/merged_19_text_document"
+DATA_PATH="${DATA_PATH} 8937251198 ${DATASET_DIR}/merged_20_text_document"
+
+# en slimpajama
+DATA_PATH="${DATA_PATH} 19986831951 ${DATASET_DIR}/slimpajama_1_text_document"
+DATA_PATH="${DATA_PATH} 19944640002 ${DATASET_DIR}/slimpajama_2_text_document"
+DATA_PATH="${DATA_PATH} 19894186680 ${DATASET_DIR}/slimpajama_3_text_document"
+DATA_PATH="${DATA_PATH} 20004835700 ${DATASET_DIR}/slimpajama_4_text_document"
+DATA_PATH="${DATA_PATH} 20092473624 ${DATASET_DIR}/slimpajama_5_text_document"
+DATA_PATH="${DATA_PATH} 19934770821 ${DATASET_DIR}/slimpajama_6_text_document"
+DATA_PATH="${DATA_PATH} 19950611171 ${DATASET_DIR}/slimpajama_7_text_document"
+DATA_PATH="${DATA_PATH} 20129369354 ${DATASET_DIR}/slimpajama_8_text_document"
+DATA_PATH="${DATA_PATH} 19994007947 ${DATASET_DIR}/slimpajama_9_text_document"
+DATA_PATH="${DATA_PATH} 20068272750 ${DATASET_DIR}/slimpajama_10_text_document"
+
 
 # job name
 JOB_NAME="Mamba-2.8B-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
