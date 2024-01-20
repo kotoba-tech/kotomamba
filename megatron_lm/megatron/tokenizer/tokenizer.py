@@ -9,7 +9,7 @@ import torch.distributed as torch_distributed
 
 def build_tokenizer(args: argparse.Namespace):
     """Initialize tokenizer."""
-    if torch_distributed.get_rank() == 0:
+    if torch_distributed.is_initialized() and torch_distributed.get_rank() == 0:
         print('> building {} tokenizer ...'.format(args.tokenizer_type), flush=True)
 
     # Select and instantiate the tokenizer.
@@ -45,7 +45,7 @@ def _vocab_size_with_padding(orig_vocab_size, args):
     multiple = args.make_vocab_size_divisible_by
     while (after % multiple) != 0:
         after += 1
-    if torch_distributed.get_rank() == 0:
+    if torch_distributed.is_initialized() and torch_distributed.get_rank() == 0:
         print(' > padded vocab (size: {}) with {} dummy tokens (new size: {})'.format(orig_vocab_size, after - orig_vocab_size, after), flush=True)
     return after
 

@@ -21,6 +21,7 @@ export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
 # mambda
 python benchmarks/benchmark_generation_mamba_simple.py \
   --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/iter_0000500" \
-  --tokenizer-path "/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model" \
+  --tokenizer-path "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/iter_0000500" \
+  --use-sentencepiece \
   --prompt "東京工業大学のキャンパスは、" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2

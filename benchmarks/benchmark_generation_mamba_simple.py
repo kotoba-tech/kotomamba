@@ -8,11 +8,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, LlamaTokenizer
 
 from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
+from megatron_lm.megatron.tokenizer.tokenizer import _Llama2Tokenizer
 
 
 parser = argparse.ArgumentParser(description="Generation benchmarking")
 parser.add_argument("--model-name", type=str, default="state-spaces/mamba-130m")
 parser.add_argument("--tokenizer-path", type=str, default="EleutherAI/gpt-neox-20b")
+parser.add_argument("--use-sentencepiece", action="store_true")
 parser.add_argument("--prompt", type=str, default=None)
 parser.add_argument("--promptlen", type=int, default=100)
 parser.add_argument("--genlen", type=int, default=100)
@@ -31,9 +33,15 @@ print(f"Loading model {args.model_name}")
 is_mamba = "mamba" in args.model_name
 
 if is_mamba:
-    tokenizer = LlamaTokenizer.from_pretrained(
-        pretrained_model_name_or_path=args.tokenizer_path,
-    )
+    if args.use_sentencepiece:
+        tokenizer = LlamaTokenizer.from_pretrained(
+            pretrained_model_name_or_path=args.tokenizer_path,
+            legacy=False,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path=args.tokenizer_path,
+        )
     model = MambaLMHeadModel.from_pretrained(pretrained_model_name=args.model_name, device=device, dtype=dtype)
 else:
     tokenizer = AutoTokenizer.from_pretrained(
