@@ -111,7 +111,9 @@ def _add_data_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     group.add_argument('--num-workers', type=int, default=2, help="Dataloader number of workers.")
     group.add_argument(
         '--tokenizer-type', type=str, default=None,
-        choices=['SentencePieceTokenizer', 'GPTSentencePieceTokenizer', 'Llama2Tokenizer', 'NullTokenizer'],
+        choices=[
+            'SentencePieceTokenizer', 'GPTSentencePieceTokenizer', 'Llama2Tokenizer', 'HuggingFaceTokenizer', 'NullTokenizer'
+        ],
         help='What type of tokenizer to use.'
     )
     group.add_argument('--tokenizer-model', type=str, default=None, help='Sentencepiece tokenizer model.')

@@ -5,6 +5,7 @@ import argparse
 from abc import ABC
 from abc import abstractmethod
 import torch.distributed as torch_distributed
+from typing import Optional
 
 
 def build_tokenizer(args: argparse.Namespace):
@@ -22,6 +23,9 @@ def build_tokenizer(args: argparse.Namespace):
     elif args.tokenizer_type == 'Llama2Tokenizer':
         assert args.tokenizer_model is not None
         tokenizer = _Llama2Tokenizer(args.tokenizer_model)
+    elif args.tokenizer_type == 'HuggingFaceTokenizer':
+        assert args.tokenizer_model is not None
+        return _HuggingFaceTokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
@@ -365,6 +369,54 @@ class _Llama2Tokenizer(_SentencePieceTokenizer):
     @property
     def eod(self):
         return self.eos_id
+
+    @property
+    def additional_special_tokens_ids(self):
+        return None
+
+
+class _HuggingFaceTokenizer:
+    def __init__(self, model_file: str) -> None:
+        self.name = "HuggingFaceTokenizer"
+
+        from transformers import AutoTokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path=model_file,
+        )
+        self.bos_id: Optional[int] = self.tokenizer.bos_token_id
+        self.eos_id: Optional[int] = self.tokenizer.eos_token_id
+        self.pad_id: Optional[int] = self.tokenizer.pad_token_id
+
+        self.vocab_size: int = self.tokenizer.vocab_size
+
+    def tokenize(self, text: str, bos=False, eos=False):
+        '''Default args for text completion, not chat/dialog.'''
+        assert type(text) is str
+        t = self.tokenizer.encode(text)  # type: ignore
+        if bos:
+            t = [self.bos_id] + t
+        if eos:
+            t = t + [self.eos_id]
+        return t
+
+    def detokenize(self, ids: list[int]):
+        return self.tokenizer.decode(ids, skip_special_tokens=True)
+
+    @property
+    def cls(self):
+        return -1
+
+    @property
+    def sep(self):
+        return -1
+
+    @property
+    def mask(self):
+        return -1
+
+    @property
+    def eod(self):
+        return self.tokenizer.eos_token_id
 
     @property
     def additional_special_tokens_ids(self):
