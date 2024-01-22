@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -l rt_AF=4
-#$ -l h_rt=10:00:00:00
+#$ -l rt_AF=16
+#$ -l h_rt=3:18:30:00
 #$ -j y
 #$ -o outputs/a-node/mamba-2.8b/
 #$ -cwd
