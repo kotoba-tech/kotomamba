@@ -18,10 +18,13 @@ source .env/bin/activate
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
 
+ITERATION=5000
+FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
+
 # mambda
 python benchmarks/benchmark_generation_mamba_simple.py \
-  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/iter_0000500" \
-  --tokenizer-path "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/iter_0000500" \
+  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
+  --tokenizer-path "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
   --use-sentencepiece \
   --prompt "東京工業大学のキャンパスは、" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2

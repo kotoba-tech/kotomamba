@@ -17,15 +17,15 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=500
-end=500
-increment=500
+start=5000
+end=5000
+increment=5000
 
 for ((i = start; i <= end; i += increment)); do
   ITERATION=$i
   FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
-  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_1024_LR_8e-4_MINLR_1e-5_WARMUP_2000_WD_0.1_GC_1/${FORMATTED_ITERATION}/model.pt
+  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_1024_LR_8e-4_MINLR_1e-5_WARMUP_2000_WD_0.1_GC_1_SEQ_2048/${FORMATTED_ITERATION}/model.pt
   OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}
   TOKNENIZER_PATH=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
 
