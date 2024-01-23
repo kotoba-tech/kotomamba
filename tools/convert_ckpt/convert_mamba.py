@@ -15,7 +15,7 @@ def main() -> None:
     )
     parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint (`model.pth`)")
     parser.add_argument("--out", type=str, required=True, help="Path to output directory")
-    parser.add_argument("--sentencepiece-tokenizer", type=str, action="store_true")
+    parser.add_argument("--sentencepiece-tokenizer", action="store_true")
     parser.add_argument("--tokenizer-path", type=str, required=True)
     args = parser.parse_args()
 
