@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_F=128
-#$ -l h_rt=1:00:00
+#$ -l h_rt=3:00:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
@@ -61,7 +61,7 @@ GRAD_CLIP=1
 
 # checkpoint & tokenizer
 TOKENIZER_MODEL=EleutherAI/gpt-neox-20b
-CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b-slimpj/
+CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b-slimpj
 CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b-slimpj/v-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
@@ -74,40 +74,43 @@ DATA_PATH=""
 # ja wikipedia
 DATA_PATH="${DATA_PATH} 2445161607 ${DATASET_DIR}/ja_wikipedia_text_document"
 
-# # ja okazaki lab cc
-# DATA_PATH="${DATA_PATH} 9051743591 ${DATASET_DIR}/merged_0_text_document"
-# DATA_PATH="${DATA_PATH} 9091558536 ${DATASET_DIR}/merged_1_text_document"
-# DATA_PATH="${DATA_PATH} 10282417095 ${DATASET_DIR}/merged_2_text_document"
-# DATA_PATH="${DATA_PATH} 10441556324 ${DATASET_DIR}/merged_3_text_document"
-# DATA_PATH="${DATA_PATH} 10197730938 ${DATASET_DIR}/merged_4_text_document"
-# DATA_PATH="${DATA_PATH} 9201870575 ${DATASET_DIR}/merged_5_text_document"
-# DATA_PATH="${DATA_PATH} 8507913222 ${DATASET_DIR}/merged_6_text_document"
-# DATA_PATH="${DATA_PATH} 9519143202 ${DATASET_DIR}/merged_7_text_document"
-# DATA_PATH="${DATA_PATH} 8863540237 ${DATASET_DIR}/merged_8_text_document"
-# DATA_PATH="${DATA_PATH} 9584205381 ${DATASET_DIR}/merged_9_text_document"
-# DATA_PATH="${DATA_PATH} 9048660573 ${DATASET_DIR}/merged_10_text_document"
-# DATA_PATH="${DATA_PATH} 9396452751 ${DATASET_DIR}/merged_11_text_document"
-# DATA_PATH="${DATA_PATH} 8759020541 ${DATASET_DIR}/merged_12_text_document"
-# DATA_PATH="${DATA_PATH} 8775232898 ${DATASET_DIR}/merged_13_text_document"
-# DATA_PATH="${DATA_PATH} 8350857380 ${DATASET_DIR}/merged_14_text_document"
-# DATA_PATH="${DATA_PATH} 11007226809 ${DATASET_DIR}/merged_15_text_document"
-# DATA_PATH="${DATA_PATH} 10234395781 ${DATASET_DIR}/merged_16_text_document"
-# DATA_PATH="${DATA_PATH} 8830411980 ${DATASET_DIR}/merged_17_text_document"
-# DATA_PATH="${DATA_PATH} 9622452380 ${DATASET_DIR}/merged_18_text_document"
-# DATA_PATH="${DATA_PATH} 10754069777 ${DATASET_DIR}/merged_19_text_document"
-# DATA_PATH="${DATA_PATH} 8937251198 ${DATASET_DIR}/merged_20_text_document"
+# en slimpajama
+DATA_PATH="${DATA_PATH} 1998733749 ${DATASET_DIR}/slimpajama_1_text_document"
+DATA_PATH="${DATA_PATH} 1994431450 ${DATASET_DIR}/slimpajama_2_text_document"
+DATA_PATH="${DATA_PATH} 1989453576 ${DATASET_DIR}/slimpajama_3_text_document"
+DATA_PATH="${DATA_PATH} 2000446584 ${DATASET_DIR}/slimpajama_4_text_document"
+DATA_PATH="${DATA_PATH} 2009165481 ${DATASET_DIR}/slimpajama_5_text_document"
+DATA_PATH="${DATA_PATH} 1993229817 ${DATASET_DIR}/slimpajama_6_text_document"
+DATA_PATH="${DATA_PATH} 1995173042 ${DATASET_DIR}/slimpajama_7_text_document"
+DATA_PATH="${DATA_PATH} 2013004838 ${DATASET_DIR}/slimpajama_8_text_document"
+DATA_PATH="${DATA_PATH} 1999418219 ${DATASET_DIR}/slimpajama_9_text_document"
+DATA_PATH="${DATA_PATH} 2006943244 ${DATASET_DIR}/slimpajama_10_text_document"
 
-# # en slimpajama
-# DATA_PATH="${DATA_PATH} 19986831951 ${DATASET_DIR}/slimpajama_1_text_document"
-# DATA_PATH="${DATA_PATH} 19944640002 ${DATASET_DIR}/slimpajama_2_text_document"
-# DATA_PATH="${DATA_PATH} 19894186680 ${DATASET_DIR}/slimpajama_3_text_document"
-# DATA_PATH="${DATA_PATH} 20004835700 ${DATASET_DIR}/slimpajama_4_text_document"
-# DATA_PATH="${DATA_PATH} 20092473624 ${DATASET_DIR}/slimpajama_5_text_document"
-# DATA_PATH="${DATA_PATH} 19934770821 ${DATASET_DIR}/slimpajama_6_text_document"
-# DATA_PATH="${DATA_PATH} 19950611171 ${DATASET_DIR}/slimpajama_7_text_document"
-# DATA_PATH="${DATA_PATH} 20129369354 ${DATASET_DIR}/slimpajama_8_text_document"
-# DATA_PATH="${DATA_PATH} 19994007947 ${DATASET_DIR}/slimpajama_9_text_document"
-# DATA_PATH="${DATA_PATH} 20068272750 ${DATASET_DIR}/slimpajama_10_text_document"
+
+DATASET_DIR="/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge/okazaki_lab_cc_gpt-neox-20b"
+
+# ja okazaki lab cc
+DATA_PATH="${DATA_PATH} 8149250311 ${DATASET_DIR}/merged_0_text_document"
+DATA_PATH="${DATA_PATH} 8184079697 ${DATASET_DIR}/merged_1_text_document"
+DATA_PATH="${DATA_PATH} 8143099062 ${DATASET_DIR}/merged_2_text_document"
+DATA_PATH="${DATA_PATH} 8459141078 ${DATASET_DIR}/merged_3_text_document"
+DATA_PATH="${DATA_PATH} 7888082822 ${DATASET_DIR}/merged_4_text_document"
+DATA_PATH="${DATA_PATH} 7898693365 ${DATASET_DIR}/merged_5_text_document"
+DATA_PATH="${DATA_PATH} 7518110853 ${DATASET_DIR}/merged_6_text_document"
+DATA_PATH="${DATA_PATH} 9901844874 ${DATASET_DIR}/merged_7_text_document"
+DATA_PATH="${DATA_PATH} 9210340014 ${DATASET_DIR}/merged_8_text_document"
+DATA_PATH="${DATA_PATH} 7951942872 ${DATASET_DIR}/merged_9_text_document"
+DATA_PATH="${DATA_PATH} 8663600423 ${DATASET_DIR}/merged_10_text_document"
+DATA_PATH="${DATA_PATH} 9679675407 ${DATASET_DIR}/merged_11_text_document"
+DATA_PATH="${DATA_PATH} 9251081241 ${DATASET_DIR}/merged_12_text_document"
+DATA_PATH="${DATA_PATH} 8037577256 ${DATASET_DIR}/merged_13_text_document"
+DATA_PATH="${DATA_PATH} 9403629150 ${DATASET_DIR}/merged_14_text_document"
+DATA_PATH="${DATA_PATH} 9183699689 ${DATASET_DIR}/merged_15_text_document"
+DATA_PATH="${DATA_PATH} 8284421403 ${DATASET_DIR}/merged_16_text_document"
+DATA_PATH="${DATA_PATH} 7661984764 ${DATASET_DIR}/merged_17_text_document"
+DATA_PATH="${DATA_PATH} 8568060884 ${DATASET_DIR}/merged_18_text_document"
+DATA_PATH="${DATA_PATH} 7977151963 ${DATASET_DIR}/merged_19_text_document"
+DATA_PATH="${DATA_PATH} 7539371265 ${DATASET_DIR}/merged_20_text_document"
 
 # job name
 JOB_NAME="Mamba-2.8B-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
@@ -130,7 +133,6 @@ mpirun -np $NUM_GPUS \
   -x PATH \
   python pretrain.py \
   --seq-length ${SEQ_LENGTH} \
-  --sliding-window-size ${SEQ_LENGTH} \
   --micro-batch-size ${MICRO_BATCH_SIZE} \
   --global-batch-size ${GLOBAL_BATCH_SIZE} \
   --train-iters ${TRAIN_STEPS} \
