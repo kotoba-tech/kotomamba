@@ -17,28 +17,29 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=5000
-end=5000
+start=500
+end=500
 increment=5000
+
+export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
 
 for ((i = start; i <= end; i += increment)); do
   ITERATION=$i
   FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
-  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b/a-node/BS_1024_LR_8e-4_MINLR_1e-5_WARMUP_2000_WD_0.1_GC_1_SEQ_2048/${FORMATTED_ITERATION}/model.pt
-  OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}
-  TOKNENIZER_PATH=/bb/llm/gaf51275/llm-jp/llm-ja-tokenizer/models/ver2/code20K_en40K_ja60K.ver2.2.model
+  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b-slimpj/v-node/BS_1024_LR_1e-4_MINLR_3.3e-6_WARMUP_2000_WD_0.1_GC_1_SEQ_2048/${FORMATTED_ITERATION}/model.pt
+  OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}
+  TOKNENIZER_PATH=EleutherAI/gpt-neox-20b
 
   echo "convert ${CHECK_POINT_PATH} to ${OUTPUT_PATH}"
 
   mkdir -p $OUTPUT_PATH
 
-  BASE_MODEL_CHECKPOINT=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b
+  BASE_MODEL_CHECKPOINT=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b-slimpj
 
   python tools/convert_ckpt/convert_mamba.py \
     --model $BASE_MODEL_CHECKPOINT \
     --ckpt $CHECK_POINT_PATH \
     --out $OUTPUT_PATH \
-    --tokenizer-path $TOKNENIZER_PATH \
-    --sentencepiece-tokenizer
+    --tokenizer-path $TOKNENIZER_PATH
 done

@@ -5,6 +5,7 @@ import torch
 from mamba_ssm.models.mixer_seq_simple import MambaLMHeadModel
 
 from megatron_lm.megatron.tokenizer.tokenizer import _SentencePieceTokenizer
+from transformers import AutoTokenizer
 
 
 def main() -> None:
@@ -14,12 +15,16 @@ def main() -> None:
     )
     parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint (`model.pth`)")
     parser.add_argument("--out", type=str, required=True, help="Path to output directory")
+    parser.add_argument("--sentencepiece-tokenizer", type=str, action="store_true")
     parser.add_argument("--tokenizer-path", type=str, required=True)
     args = parser.parse_args()
 
-    tokenizer = _SentencePieceTokenizer(
-        model_file=args.tokenizer_path,
-    )
+    if args.sentencepiece_tokenizer:
+        tokenizer = _SentencePieceTokenizer(
+            model_file=args.tokenizer_path,
+        )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_path)
 
     print(f"Loading HF model: {args.model}", flush=True)
     model = MambaLMHeadModel.from_pretrained(

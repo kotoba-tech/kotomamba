@@ -26,6 +26,7 @@
     "promptlen",
     "randperm",
     "safetensors",
+    "sentencepiece",
     "silu",
     "tflops",
     "topk",
