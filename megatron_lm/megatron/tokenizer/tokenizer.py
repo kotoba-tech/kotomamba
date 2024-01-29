@@ -25,7 +25,7 @@ def build_tokenizer(args: argparse.Namespace):
         tokenizer = _Llama2Tokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'HuggingFaceTokenizer':
         assert args.tokenizer_model is not None
-        return _HuggingFaceTokenizer(args.tokenizer_model)
+        tokenizer = _HuggingFaceTokenizer(args.tokenizer_model)
     elif args.tokenizer_type == 'NullTokenizer':
         assert args.vocab_size is not None
         tokenizer = _NullTokenizer(args.vocab_size)
