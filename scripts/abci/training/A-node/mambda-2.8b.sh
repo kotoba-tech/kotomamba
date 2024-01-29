@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_AF=4
+#$ -l rt_AF=8
 #$ -l h_rt=3:00:00:00
 #$ -j y
 #$ -o outputs/a-node/mamba-2.8b/
