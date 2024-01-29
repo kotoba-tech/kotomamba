@@ -20,6 +20,7 @@ def log_model_info(model: torch.nn.Module) -> None:
         model_config["rms_norm"] = model.config.rms_norm
         model_config["residual_in_fp32"] = model.config.residual_in_fp32
         model_config["pad_vocab_size_multiple"] = model.config.pad_vocab_size_multiple
+        model_config["model_padded_vocab_size"] = model.config.vocab_size
     else:
         model_config["activation_function"] = model.config.hidden_act
         model_config["hidden_size"] = model.config.hidden_size
