@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l rt_F=128
+#$ -l rt_F=8
 #$ -l h_rt=3:00:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
@@ -52,8 +52,8 @@ GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=191000
 
 # optimizer config
-LR=1e-4
-MIN_LR=3.3e-6
+LR=2e-5
+MIN_LR=6.6e-7
 LR_WARMUP_STEPS=2000
 LR_DECAY_STEPS=$TRAIN_STEPS
 WEIGHT_DECAY=0.1
@@ -62,7 +62,7 @@ GRAD_CLIP=1
 # checkpoint & tokenizer
 TOKENIZER_MODEL=EleutherAI/gpt-neox-20b
 CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b-slimpj
-CHECKPOINT_SAVE_DIR=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b-slimpj/v-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/llama/checkpoints/mamba-2.8b-slimpj/v-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -90,27 +90,27 @@ DATA_PATH="${DATA_PATH} 2006943244 ${DATASET_DIR}/slimpajama_10_text_document"
 DATASET_DIR="/bb/grandchallenge/gaf51389/datasets/abci-grand-challenge/okazaki_lab_cc_gpt-neox-20b"
 
 # ja okazaki lab cc
-DATA_PATH="${DATA_PATH} 8149250311 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_0_text_document"
-DATA_PATH="${DATA_PATH} 8184079697 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_1_text_document"
-DATA_PATH="${DATA_PATH} 8143099062 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_10_text_document"
-DATA_PATH="${DATA_PATH} 8459141078 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_11_text_document"
-DATA_PATH="${DATA_PATH} 7888082822 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_12_text_document"
-DATA_PATH="${DATA_PATH} 7898693365 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_13_text_document"
-DATA_PATH="${DATA_PATH} 7518110853 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_14_text_document"
-DATA_PATH="${DATA_PATH} 9901844874 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_15_text_document"
-DATA_PATH="${DATA_PATH} 9210340014 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_16_text_document"
-DATA_PATH="${DATA_PATH} 7951942872 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_17_text_document"
-DATA_PATH="${DATA_PATH} 8663600423 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_18_text_document"
-DATA_PATH="${DATA_PATH} 9679675407 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_19_text_document"
-DATA_PATH="${DATA_PATH} 9251081241 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_2_text_document"
-DATA_PATH="${DATA_PATH} 8037577256 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_20_text_document"
-DATA_PATH="${DATA_PATH} 9403629150 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_3_text_document"
-DATA_PATH="${DATA_PATH} 9183699689 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_4_text_document"
-DATA_PATH="${DATA_PATH} 8284421403 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_5_text_document"
-DATA_PATH="${DATA_PATH} 7661984764 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_6_text_document"
-DATA_PATH="${DATA_PATH} 8568060884 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_7_text_document"
-DATA_PATH="${DATA_PATH} 7977151963 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_8_text_document"
-DATA_PATH="${DATA_PATH} 7539371265 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_9_text_document"
+# DATA_PATH="${DATA_PATH} 8149250311 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_0_text_document"
+# DATA_PATH="${DATA_PATH} 8184079697 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_1_text_document"
+# DATA_PATH="${DATA_PATH} 8143099062 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_10_text_document"
+# DATA_PATH="${DATA_PATH} 8459141078 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_11_text_document"
+# DATA_PATH="${DATA_PATH} 7888082822 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_12_text_document"
+# DATA_PATH="${DATA_PATH} 7898693365 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_13_text_document"
+# DATA_PATH="${DATA_PATH} 7518110853 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_14_text_document"
+# DATA_PATH="${DATA_PATH} 9901844874 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_15_text_document"
+# DATA_PATH="${DATA_PATH} 9210340014 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_16_text_document"
+# DATA_PATH="${DATA_PATH} 7951942872 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_17_text_document"
+# DATA_PATH="${DATA_PATH} 8663600423 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_18_text_document"
+# DATA_PATH="${DATA_PATH} 9679675407 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_19_text_document"
+# DATA_PATH="${DATA_PATH} 9251081241 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_2_text_document"
+# DATA_PATH="${DATA_PATH} 8037577256 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_20_text_document"
+# DATA_PATH="${DATA_PATH} 9403629150 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_3_text_document"
+# DATA_PATH="${DATA_PATH} 9183699689 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_4_text_document"
+# DATA_PATH="${DATA_PATH} 8284421403 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_5_text_document"
+# DATA_PATH="${DATA_PATH} 7661984764 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_6_text_document"
+# DATA_PATH="${DATA_PATH} 8568060884 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_7_text_document"
+# DATA_PATH="${DATA_PATH} 7977151963 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_8_text_document"
+# DATA_PATH="${DATA_PATH} 7539371265 ${DATASET_DIR}/okazaki_lab_cc_2100_merged_9_text_document"
 
 # job name
 JOB_NAME="Mamba-2.8B-${NODE_TYPE}-${NUM_NODES}node-${NUM_GPUS}gpu-${SEQ_LENGTH}s-BS=${GLOBAL_BATCH_SIZE}-LR=${LR}-MINLR=${MIN_LR}-WARMUP=${LR_WARMUP_STEPS}-WD=${WEIGHT_DECAY}-GC=${GRAD_CLIP}"
@@ -151,7 +151,7 @@ mpirun -np $NUM_GPUS \
   --adam-beta1 0.9 \
   --adam-beta2 0.95 \
   --adam-eps 1e-6 \
-  --save-interval 500 \
+  --save-interval 10 \
   --eval-interval 100 \
   --eval-iters 10 \
   --fp16 \
@@ -163,8 +163,9 @@ mpirun -np $NUM_GPUS \
   --sharding-strategy FULL_SHARD \
   --checkpoint-type LOCAL_STATE_DICT \
   --fsdp-activation-checkpointing \
+  --ignore-vocab-size-mis-match \
   --use-mpi \
   --mamba \
   --wandb-entity "prj-jalm" \
-  --wandb-project "ABCI-mamba" \
+  --wandb-project "ABCI-mamba-continual" \
   --wandb-name "${JOB_NAME}"

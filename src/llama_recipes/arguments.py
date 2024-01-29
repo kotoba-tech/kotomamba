@@ -240,6 +240,7 @@ def _add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
         '--make-vocab-size-divisible-by', type=int, default=128,
         help='Pad the vocab size to be divisible by this value.This is added for computational efficiency reasons.'
     )
+    group.add_argument('--ignore-vocab-size-mis-match', action='store_true')
 
     # model
     group.add_argument("--sliding-window-size", type=int, default=4096)

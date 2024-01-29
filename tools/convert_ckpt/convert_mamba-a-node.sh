@@ -17,8 +17,8 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=10000
-end=30000
+start=50000
+end=50000
 increment=5000
 
 for ((i = start; i <= end; i += increment)); do
@@ -40,5 +40,7 @@ for ((i = start; i <= end; i += increment)); do
     --ckpt $CHECK_POINT_PATH \
     --out $OUTPUT_PATH \
     --tokenizer-path $TOKNENIZER_PATH \
-    --sentencepiece-tokenizer
+    --sentencepiece-tokenizer \
+    --bf16 \
+    --from-scratch
 done

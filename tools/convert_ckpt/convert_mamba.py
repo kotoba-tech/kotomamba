@@ -15,7 +15,9 @@ def main() -> None:
     )
     parser.add_argument("--ckpt", type=str, required=True, help="Path to checkpoint (`model.pth`)")
     parser.add_argument("--out", type=str, required=True, help="Path to output directory")
+    parser.add_argument("--bf16", action="store_true")
     parser.add_argument("--sentencepiece-tokenizer", action="store_true")
+    parser.add_argument("--from-scratch", action="store_true")
     parser.add_argument("--tokenizer-path", type=str, required=True)
     args = parser.parse_args()
 
@@ -29,9 +31,10 @@ def main() -> None:
     print(f"Loading HF model: {args.model}", flush=True)
     model = MambaLMHeadModel.from_pretrained(
         args.model,
-        dtype=torch.float16,
+        dtype=torch.bfloat16 if args.bf16 else torch.float16,
         vocab_size=tokenizer.vocab_size,
-        from_scratch=True,
+        from_scratch=args.from_scratch,
+        ignore_vocab_size_mis_match=True,
     )
 
     print(f"Loading CKPT: {args.ckpt}", flush=True)

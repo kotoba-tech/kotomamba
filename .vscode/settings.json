@@ -28,6 +28,8 @@
     "safetensors",
     "sentencepiece",
     "silu",
+    "stabilityai",
+    "stablelm",
     "tflops",
     "topk",
     "topp",
