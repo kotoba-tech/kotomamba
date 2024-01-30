@@ -17,8 +17,8 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=500
-end=500
+start=1500
+end=1500
 increment=5000
 
 export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
@@ -27,7 +27,7 @@ for ((i = start; i <= end; i += increment)); do
   ITERATION=$i
   FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
-  CHECK_POINT_PATH=/bb/grandchallenge/gaf51389/checkpoints/mamba-2.8b-slimpj/v-node/BS_1024_LR_1e-4_MINLR_3.3e-6_WARMUP_2000_WD_0.1_GC_1_SEQ_2048/${FORMATTED_ITERATION}/model.pt
+  CHECK_POINT_PATH=/bb/llm/gaf51275/llama/checkpoints/mamba-2.8b-slimpj/v-node/BS_1024_LR_2e-5_MINLR_6.6e-7_WARMUP_2000_WD_0.1_GC_1_SEQ_2048/${FORMATTED_ITERATION}/model.pt
   OUTPUT_PATH=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}
   TOKNENIZER_PATH=EleutherAI/gpt-neox-20b
 

@@ -18,12 +18,21 @@ source .env/bin/activate
 # huggingface cache
 export HF_HOME=/groups/gcd50698/fujii/work/mamba/mamba/.hf_cache
 
-ITERATION=50
+ITERATION=1500
 FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 
 # mambda
 python benchmarks/benchmark_generation_mamba_simple.py \
-  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b-alimpj/v-node/${FORMATTED_ITERATION}" \
+  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}" \
   --tokenizer-path "EleutherAI/gpt-neox-20b" \
   --prompt "Tokyo" \
-  --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
+  --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 \
+  --genlen 512
+
+
+python benchmarks/benchmark_generation_mamba_simple.py \
+  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}" \
+  --tokenizer-path "EleutherAI/gpt-neox-20b" \
+  --prompt "東京工業大学は、" \
+  --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 \
+  --genlen 512
