@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_F=128
-#$ -l h_rt=6:23:00:00
+#$ -l h_rt=6:23:30:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
@@ -49,7 +49,7 @@ DATA_PARALLEL_SIZE=$NUM_GPUS
 
 MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=1024
-TRAIN_STEPS=191000
+TRAIN_STEPS=95500  # 95500 * 1024 * 2048 = About 200B tokens
 
 # optimizer config
 LR=2e-5
