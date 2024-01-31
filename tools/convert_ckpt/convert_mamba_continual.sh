@@ -17,8 +17,8 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=1500
-end=1500
+start=4000
+end=4000
 increment=5000
 
 export HF_HOME=/bb/grandchallenge/gaf51389/hf_cache
