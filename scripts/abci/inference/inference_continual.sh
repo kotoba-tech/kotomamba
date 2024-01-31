@@ -25,14 +25,14 @@ FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 python benchmarks/benchmark_generation_mamba_simple.py \
   --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}" \
   --tokenizer-path "EleutherAI/gpt-neox-20b" \
-  --prompt "Tokyo is" \
+  --prompt "仙台市は" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 \
-  --genlen 256
+  --genlen 2048
 
 
 python benchmarks/benchmark_generation_mamba_simple.py \
   --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node/${FORMATTED_ITERATION}" \
   --tokenizer-path "EleutherAI/gpt-neox-20b" \
-  --prompt "U.S.A" \
+  --prompt "東北大学は" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2 \
-  --genlen 256
+  --genlen 2048

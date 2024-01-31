@@ -25,6 +25,17 @@ FORMATTED_ITERATION=$(printf "iter_%07d" $ITERATION)
 python benchmarks/benchmark_generation_mamba_simple.py \
   --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
   --tokenizer-path "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
+  --tokenizer-model "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}"/tokenizer.model \
+  --tokenizer-type SentencePieceTokenizer \
   --use-sentencepiece \
   --prompt "東京工業大学のキャンパスは、" \
+  --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
+
+python benchmarks/benchmark_generation_mamba_simple.py \
+  --model-name "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
+  --tokenizer-path "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}" \
+  --tokenizer-model "/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/a-node/${FORMATTED_ITERATION}"/tokenizer.model \
+  --tokenizer-type SentencePieceTokenizer \
+  --use-sentencepiece \
+  --prompt "東北大学は" \
   --topp 0.9 --temperature 0.7 --repetition-penalty 1.2
