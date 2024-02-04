@@ -2,8 +2,8 @@
 
 set -e
 
-start=10000
-end=30000
+start=40000
+end=50000
 increment=10000
 
 upload_base_dir=/bb/grandchallenge/gaf51389/converted_hf_checkpoints/mamba-2.8b/v-node
