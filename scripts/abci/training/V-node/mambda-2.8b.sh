@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_F=128
-#$ -l h_rt=6:23:30:00
+#$ -l h_rt=1:11:00:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
@@ -49,11 +49,11 @@ DATA_PARALLEL_SIZE=$NUM_GPUS
 
 MICRO_BATCH_SIZE=2
 GLOBAL_BATCH_SIZE=1024
-TRAIN_STEPS=95500  # 95500 * 1024 * 2048 = About 200B tokens
+TRAIN_STEPS=95500 # 95500 * 1024 * 2048 = About 200B tokens
 
 # optimizer config
 LR=2e-5
-MIN_LR=6.6e-7
+MIN_LR=2e-6
 LR_WARMUP_STEPS=2000
 LR_DECAY_STEPS=$TRAIN_STEPS
 WEIGHT_DECAY=0.1
@@ -62,7 +62,7 @@ GRAD_CLIP=1
 # checkpoint & tokenizer
 TOKENIZER_MODEL=EleutherAI/gpt-neox-20b
 CHECKPOINT_DIR=/bb/grandchallenge/gaf51389/hf_checkpoints/mamba-2.8b-slimpj
-CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/llama/checkpoints/mamba-2.8b-slimpj/v-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}
+CHECKPOINT_SAVE_DIR=/bb/llm/gaf51275/llama/checkpoints/mamba-2.8b-slimpj/v-node/BS_${GLOBAL_BATCH_SIZE}_LR_${LR}_MINLR_${MIN_LR}_WARMUP_${LR_WARMUP_STEPS}_WD_${WEIGHT_DECAY}_GC_${GRAD_CLIP}_SEQ_${SEQ_LENGTH}_FP32
 
 mkdir -p ${CHECKPOINT_SAVE_DIR}
 
@@ -155,6 +155,7 @@ mpirun -np $NUM_GPUS \
   --eval-interval 100 \
   --eval-iters 10 \
   --fp16 \
+  --param-dtype fp32 \
   --mixed-precision \
   --base-model ${CHECKPOINT_DIR} \
   --save ${CHECKPOINT_SAVE_DIR} \

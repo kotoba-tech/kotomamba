@@ -164,6 +164,7 @@ def _add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
     # precision
     group.add_argument("--bf16", action="store_true")
     group.add_argument("--fp16", action="store_true")
+    group.add_argument("--fp32", action="store_true")
     group.add_argument("--mixed-precision", action="store_true")
     group.add_argument(
         "--param-dtype", type=str, default=None, choices=["fp16", "bf16", "fp32"]

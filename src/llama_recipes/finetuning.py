@@ -121,6 +121,8 @@ def main() -> None:
         model.to(torch.bfloat16)  # type: ignore
     elif args.fp16:
         model.to(torch.float16)  # type: ignore
+    elif args.fp32:
+        model.to(torch.float32)  # type: ignore
 
     if args.freeze_layers:
         print_rank_0("NOTE: freeze transformer layers")
