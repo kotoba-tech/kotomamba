@@ -17,8 +17,8 @@ set -e
 source .env/bin/activate
 
 # convert checkpoints
-start=50000
-end=50000
+start=100000
+end=100000
 increment=5000
 
 for ((i = start; i <= end; i += increment)); do
