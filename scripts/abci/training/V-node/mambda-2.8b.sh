@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -l rt_F=128
-#$ -l h_rt=1:11:00:00
+#$ -l h_rt=0:12:50:00
 #$ -j y
 #$ -o outputs/v-node/mamba-2.8b/
 #$ -cwd
@@ -52,8 +52,8 @@ GLOBAL_BATCH_SIZE=1024
 TRAIN_STEPS=95500 # 95500 * 1024 * 2048 = About 200B tokens
 
 # optimizer config
-LR=2e-5
-MIN_LR=2e-6
+LR=6e-5
+MIN_LR=6e-6
 LR_WARMUP_STEPS=2000
 LR_DECAY_STEPS=$TRAIN_STEPS
 WEIGHT_DECAY=0.1
