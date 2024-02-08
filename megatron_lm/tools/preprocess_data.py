@@ -225,7 +225,7 @@ def get_args():
     group.add_argument('--tokenizer-type', type=str, required=True,
                        choices=['MambaTokenizer', 'SentencePieceTokenizer',
                                 'GPTSentencePieceTokenizer', 'Llama2Tokenizer',
-                                'NullTokenizer'],
+                                'HuggingFaceTokenizer', 'NullTokenizer'],
                        help='What type of tokenizer to use.')
     group.add_argument('--tokenizer-model', type=str, default=None,
                        help='YTTM tokenizer model.')

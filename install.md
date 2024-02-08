@@ -66,6 +66,48 @@
 
     And then. `make` at `kotobamba/megatron_lm/megatron/core/datasets`.
 
+6. change triton cache
+
+    ref: https://github.com/openai/triton/issues/2688
+
+    `.env/lib/python3.10/site-packages/triton/runtime/cache.py:L7`
+    ```diff
+    + import torch.distributed as torch_distributed
+    ```
+
+    `.env/lib/python3.10/site-packages/triton/runtime/cache.py:L91`
+
+    ```diff
+    -    temp_path = f"{filepath}.tmp.pid_{pid}_{rnd_id}"
+    -    mode = "wb" if binary else "w"
+    -    with open(temp_path, mode) as f:
+    -        f.write(data)
+    -    # Replace is guaranteed to be atomic on POSIX systems if it succeeds
+    -    # so filepath cannot see a partial write
+    -    os.replace(temp_path, filepath)
+    +    # *** Rank 0 only ***
+    +    if torch_distributed.is_initialized() and torch_distributed.get_rank() == 0:
+    +        temp_path = f"{filepath}.tmp.pid_{pid}_{rnd_id}"
+    +        mode = "wb" if binary else "w"
+    +        with open(temp_path, mode) as f:
+    +            f.write(data)
+    +        # Replace is guaranteed to be atomic on POSIX systems if it succeeds
+    +        # so filepath cannot see a partial write
+    +        os.replace(temp_path, filepath)
+    +    elif not torch_distributed.is_initialized():
+    +        temp_path = f"{filepath}.tmp.pid_{pid}_{rnd_id}"
+    +        mode = "wb" if binary else "w"
+    +        with open(temp_path, mode) as f:
+    +            f.write(data)
+    +        # Replace is guaranteed to be atomic on POSIX systems if it succeeds
+    +        # so filepath cannot see a partial write
+    +        os.replace(temp_path, filepath)
+
+    +    # *** Add a distributed barrier ***
+    +    if torch_distributed.is_initialized():
+    +        torch_distributed.barrier()
+    ```
+
 ## Inference
 
 you can measure throughput of inference in 2.8B size model

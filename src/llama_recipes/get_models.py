@@ -335,6 +335,7 @@ def get_model(
             dtype=torch.bfloat16 if args.bf16 else torch.float16,
             from_scratch=args.from_scratch,
             vocab_size=tokenizer.vocab_size,
+            ignore_vocab_size_mis_match=args.ignore_vocab_size_mis_match,
         )
 
         return model  # type: ignore

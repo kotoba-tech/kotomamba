@@ -111,7 +111,9 @@ def _add_data_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     group.add_argument('--num-workers', type=int, default=2, help="Dataloader number of workers.")
     group.add_argument(
         '--tokenizer-type', type=str, default=None,
-        choices=['SentencePieceTokenizer', 'GPTSentencePieceTokenizer', 'Llama2Tokenizer', 'NullTokenizer'],
+        choices=[
+            'SentencePieceTokenizer', 'GPTSentencePieceTokenizer', 'Llama2Tokenizer', 'HuggingFaceTokenizer', 'NullTokenizer'
+        ],
         help='What type of tokenizer to use.'
     )
     group.add_argument('--tokenizer-model', type=str, default=None, help='Sentencepiece tokenizer model.')
@@ -162,6 +164,7 @@ def _add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
     # precision
     group.add_argument("--bf16", action="store_true")
     group.add_argument("--fp16", action="store_true")
+    group.add_argument("--fp32", action="store_true")
     group.add_argument("--mixed-precision", action="store_true")
     group.add_argument(
         "--param-dtype", type=str, default=None, choices=["fp16", "bf16", "fp32"]
@@ -238,6 +241,7 @@ def _add_training_args(parser: argparse.ArgumentParser) -> argparse.ArgumentPars
         '--make-vocab-size-divisible-by', type=int, default=128,
         help='Pad the vocab size to be divisible by this value.This is added for computational efficiency reasons.'
     )
+    group.add_argument('--ignore-vocab-size-mis-match', action='store_true')
 
     # model
     group.add_argument("--sliding-window-size", type=int, default=4096)

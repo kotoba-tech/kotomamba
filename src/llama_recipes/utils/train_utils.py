@@ -9,7 +9,7 @@ from torch import distributed as torch_distributed  # noqa: F401
 from torch.distributed.fsdp.sharded_grad_scaler import ShardedGradScaler
 from torch.nn.utils import clip_grad_norm_  # type: ignore
 
-from llama_recipes.policies import fpSixteen, bfSixteen, bfSixteen_mixed, get_decoder_layer_wrapper
+from llama_recipes.policies import fpSixteen, bfSixteen, bfSixteen_mixed, fp32_policy, fpSixteen_mixed, get_decoder_layer_wrapper
 from llama_recipes.utils.wandb_utils import log_model_info, log_wandb
 from llama_recipes.utils.checkpoint import save_checkpoint, get_latest_iteration
 
@@ -330,10 +330,18 @@ def get_policies(rank: int, model_name: str):
             mixed_precision_policy = bfSixteen
             if rank == 0:
                 print("\nBFloat16 enabled for mixed precision - using bfSixteen policy\n", flush=True)
+        elif args.fp16 and args.param_dtype == "fp32":
+            mixed_precision_policy = fpSixteen_mixed
+            if rank == 0:
+                print("\nFloat16 enabled for mixed precision - using fpSixteen_mixed policy\n", flush=True)
         elif args.fp16:
             mixed_precision_policy = fpSixteen
             if rank == 0:
                 print("\nFP16 enabled\n", flush=True)
+        elif args.fp32:
+            mixed_precision_policy = fp32_policy
+            if rank == 0:
+                print("\nFP32 enabled\n", flush=True)
         else:
             print("bFloat16 support not present. Using FP32, and not mixed precision")
     wrapping_policy = get_decoder_layer_wrapper(model_name=model_name)

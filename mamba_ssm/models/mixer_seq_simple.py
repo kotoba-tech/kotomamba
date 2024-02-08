@@ -297,6 +297,7 @@ class MambaLMHeadModel(GenerationMixin, PreTrainedModel):
         dtype=None,
         from_scratch=False,
         vocab_size=None,
+        ignore_vocab_size_mis_match=False,
         **kwargs
     ):
         config = load_config_hf(pretrained_model_name)
@@ -304,8 +305,15 @@ class MambaLMHeadModel(GenerationMixin, PreTrainedModel):
         if vocab_size is not None and from_scratch:
             config.vocab_size = vocab_size
         elif vocab_size is not None and vocab_size != config.vocab_size:
-            print(f"vocab_size is set to {vocab_size} but config vocab size is {config.vocab_size}.")
-            raise ValueError
+            if ignore_vocab_size_mis_match and vocab_size < config.vocab_size:
+                if torch_distributed.is_initialized() and torch_distributed.get_rank() == 0:
+                    print(
+                        f"WARNING: vocab_size is set to {vocab_size} but config vocab size is {config.vocab_size}."
+                    )
+            else:
+                if torch_distributed.is_initialized() and torch_distributed.get_rank() == 0:
+                    print(f"WARNING: vocab_size is set to {vocab_size} but config vocab size is {config.vocab_size}.")
+                    raise ValueError
 
         model = cls(config=config, device=device, dtype=dtype, **kwargs)
 
